@@ -1,0 +1,7 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/Blank_Winform/obj/Debug/net8.0-windows/ref/Blank_Winform.dll
+/Blank_Winform/obj/Debug/net8.0-windows/refint/Blank_Winform.dll
+/Blank_Winform/obj/Debug/net8.0-windows/.NETCoreApp,Version=v8.0.AssemblyAttributes.cs
