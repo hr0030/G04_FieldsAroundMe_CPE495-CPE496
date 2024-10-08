@@ -103,7 +103,8 @@ namespace FAMApp
             Controls.Add(cartesianChart1);
             Controls.Add(toolStrip1);
             Name = "Form1";
-            Text = "Form1";
+            Text = "Fields Around Me";
+            Load += Form1_Load;
             toolStrip1.ResumeLayout(false);
             toolStrip1.PerformLayout();
             ResumeLayout(false);
