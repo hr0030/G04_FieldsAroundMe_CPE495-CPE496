@@ -26,5 +26,10 @@ namespace FAMApp
         {
 
         }
+
+        private void cartesianChart1_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }
