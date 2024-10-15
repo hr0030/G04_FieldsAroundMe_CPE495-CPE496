@@ -1,8 +1,13 @@
-﻿using LiveChartsCore; // Core library
+﻿using System;
+using System.IO;
+using System.Globalization; // Added for Parsing of CSV file
+using LiveChartsCore; // Core library
 using LiveChartsCore.SkiaSharpView; // Core components
 using LiveChartsCore.SkiaSharpView.WinForms; // For WinForms components
 using System.Drawing;
 using System.Windows.Forms;
+using LiveCharts.Wpf;
+using LiveCharts;
 
 namespace FAMApp
 {
@@ -41,7 +46,7 @@ namespace FAMApp
             wifiToolStripMenuItem = new ToolStripMenuItem();
             cloudToolStripMenuItem = new ToolStripMenuItem();
             microSDToolStripMenuItem = new ToolStripMenuItem();
-            cartesianChart1 = new CartesianChart();
+            cartesianChart1 = new LiveChartsCore.SkiaSharpView.WinForms.CartesianChart();
             toolStrip1.SuspendLayout();
             SuspendLayout();
             // 
@@ -119,6 +124,70 @@ namespace FAMApp
         private ToolStripMenuItem wifiToolStripMenuItem;
         private ToolStripMenuItem cloudToolStripMenuItem;
         private ToolStripMenuItem microSDToolStripMenuItem;
-        private CartesianChart cartesianChart1;
+        private LiveChartsCore.SkiaSharpView.WinForms.CartesianChart cartesianChart1;
+
+
+
+
+        private void LoadCSVAndPlot()
+        {
+            try
+            {
+                // Load CSV data (Currently Hardcoded
+                string[] csvLines = File.ReadAllLines("sine_wave.csv");
+
+                // First Line is Frequency, Second is timestamp, must do something with timestamp in later version
+                double samplingFrequency = double.Parse(csvLines[0], CultureInfo.InvariantCulture);
+                DateTime timestamp = DateTime.Parse(csvLines[1], CultureInfo.InvariantCulture);
+
+
+                string[] dataPoints = csvLines[2].Split(',');
+
+                // Convert the string data to doubles
+                var values = Array.ConvertAll(dataPoints, s => double.Parse(s, CultureInfo.InvariantCulture));
+
+                var series = new LineSeries<double>
+                {
+                    Values = values
+                };
+
+                // Add the series to the cartesian chart
+                cartesianChart1.Series = new ISeries[] { series };
+
+                // Configure axes
+                cartesianChart1.XAxes = new LiveChartsCore.SkiaSharpView.Axis[]
+                {
+            new LiveChartsCore.SkiaSharpView.Axis
+            {
+                Name = "Time (s)",
+                Labels = GenerateTimeLabels(samplingFrequency, values.Length)
+            }
+                };
+
+                cartesianChart1.YAxes = new LiveChartsCore.SkiaSharpView.Axis[]
+                {
+            new LiveChartsCore.SkiaSharpView.Axis
+            {
+                Name = "Values"
+            }
+                };
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading and plotting CSV data: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private string[] GenerateTimeLabels(double samplingFrequency, int numberOfPoints)
+        {
+                    // Temporary, must implement real time stamps
+            string[] timeLabels = new string[numberOfPoints];
+            double timeInterval = 1 / samplingFrequency; 
+            for (int i = 0; i < numberOfPoints; i++)
+            {
+                timeLabels[i] = (i * timeInterval).ToString("F2");
+            }
+            return timeLabels;
+        }
     }
 }

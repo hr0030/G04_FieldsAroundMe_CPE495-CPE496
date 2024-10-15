@@ -24,7 +24,7 @@ namespace FAMApp
 
         private void microSDToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
+            LoadCSVAndPlot();
         }
 
         private void cartesianChart1_Load(object sender, EventArgs e)
