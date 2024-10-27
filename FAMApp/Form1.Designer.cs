@@ -93,6 +93,8 @@ namespace FAMApp
             // 
             // cartesianChart1
             // 
+            cartesianChart1.AutoSize = true;
+            cartesianChart1.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             cartesianChart1.Dock = DockStyle.Fill;
             cartesianChart1.Location = new Point(0, 25);
             cartesianChart1.Name = "cartesianChart1";
@@ -129,21 +131,32 @@ namespace FAMApp
 
 
 
-        private void LoadCSVAndPlot()
+        private void LoadCSVAndPlot(string filePath)
         {
             try
             {
-                // Load CSV data (Currently Hardcoded
-                string[] csvLines = File.ReadAllLines("sine_wave.csv");
+                // Check if .csv
+                if (Path.GetExtension(filePath).ToLower() != ".csv")
+                {
+                    MessageBox.Show("Select a CSV File", "Invalid File Type", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
 
-                // First Line is Frequency, Second is timestamp, must do something with timestamp in later version
+                string[] csvLines = File.ReadAllLines(filePath);
+
+                //Check file has at least 3 lines (frequency, timestamp, data)
+                if (csvLines.Length < 3)
+                {
+                    MessageBox.Show("The CSV file is missing necessary data.", "Invalid CSV Format", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Get Frequency and Timestamp
                 double samplingFrequency = double.Parse(csvLines[0], CultureInfo.InvariantCulture);
                 DateTime timestamp = DateTime.Parse(csvLines[1], CultureInfo.InvariantCulture);
 
-
+                // Get data from third line
                 string[] dataPoints = csvLines[2].Split(',');
-
-                // Convert the string data to doubles
                 var values = Array.ConvertAll(dataPoints, s => double.Parse(s, CultureInfo.InvariantCulture));
 
                 var series = new LineSeries<double>
@@ -151,7 +164,6 @@ namespace FAMApp
                     Values = values
                 };
 
-                // Add the series to the cartesian chart
                 cartesianChart1.Series = new ISeries[] { series };
 
                 // Configure axes
@@ -172,11 +184,16 @@ namespace FAMApp
             }
                 };
             }
+            catch (FormatException fe)
+            {
+                MessageBox.Show($"File format error: {fe.Message}. Ensure the CSV has data in correct format(Frequency, Timestamp, Data)", "Format Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading and plotting CSV data: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
 
         private string[] GenerateTimeLabels(double samplingFrequency, int numberOfPoints)
         {
