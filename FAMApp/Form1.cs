@@ -24,7 +24,17 @@ namespace FAMApp
 
         private void microSDToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            LoadCSVAndPlot();
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*";
+                openFileDialog.Title = "Select a CSV file";
+
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string filePath = openFileDialog.FileName;
+                    LoadCSVAndPlot(filePath); 
+                }
+            }
         }
 
         private void cartesianChart1_Load(object sender, EventArgs e)
