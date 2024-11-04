@@ -46,16 +46,16 @@ namespace FAMApp
             wifiToolStripMenuItem = new ToolStripMenuItem();
             cloudToolStripMenuItem = new ToolStripMenuItem();
             microSDToolStripMenuItem = new ToolStripMenuItem();
-            cartesianChart1 = new LiveChartsCore.SkiaSharpView.WinForms.CartesianChart();
             toolStrip1.SuspendLayout();
             SuspendLayout();
             // 
             // toolStrip1
             // 
+            toolStrip1.ImageScalingSize = new Size(20, 20);
             toolStrip1.Items.AddRange(new ToolStripItem[] { sourceButton1 });
             toolStrip1.Location = new Point(0, 0);
             toolStrip1.Name = "toolStrip1";
-            toolStrip1.Size = new Size(800, 25);
+            toolStrip1.Size = new Size(914, 27);
             toolStrip1.TabIndex = 0;
             toolStrip1.Text = "toolStrip1";
             // 
@@ -66,49 +66,38 @@ namespace FAMApp
             sourceButton1.Image = (Image)resources.GetObject("sourceButton1.Image");
             sourceButton1.ImageTransparentColor = Color.Magenta;
             sourceButton1.Name = "sourceButton1";
-            sourceButton1.Size = new Size(56, 22);
+            sourceButton1.Size = new Size(68, 24);
             sourceButton1.Text = "Source";
             sourceButton1.Click += sourceButton1_Click;
             // 
             // wifiToolStripMenuItem
             // 
             wifiToolStripMenuItem.Name = "wifiToolStripMenuItem";
-            wifiToolStripMenuItem.Size = new Size(180, 22);
+            wifiToolStripMenuItem.Size = new Size(226, 26);
             wifiToolStripMenuItem.Text = "Wifi";
             wifiToolStripMenuItem.Click += wifiToolStripMenuItem_Click;
             // 
             // cloudToolStripMenuItem
             // 
             cloudToolStripMenuItem.Name = "cloudToolStripMenuItem";
-            cloudToolStripMenuItem.Size = new Size(180, 22);
+            cloudToolStripMenuItem.Size = new Size(226, 26);
             cloudToolStripMenuItem.Text = "Load from Cloud";
             cloudToolStripMenuItem.Click += cloudToolStripMenuItem_Click;
             // 
             // microSDToolStripMenuItem
             // 
             microSDToolStripMenuItem.Name = "microSDToolStripMenuItem";
-            microSDToolStripMenuItem.Size = new Size(180, 22);
+            microSDToolStripMenuItem.Size = new Size(226, 26);
             microSDToolStripMenuItem.Text = "Load from Micro SD";
             microSDToolStripMenuItem.Click += microSDToolStripMenuItem_Click;
             // 
-            // cartesianChart1
-            // 
-            cartesianChart1.AutoSize = true;
-            cartesianChart1.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            cartesianChart1.Dock = DockStyle.Fill;
-            cartesianChart1.Location = new Point(0, 25);
-            cartesianChart1.Name = "cartesianChart1";
-            cartesianChart1.Size = new Size(800, 425);
-            cartesianChart1.TabIndex = 1;
-            cartesianChart1.Load += cartesianChart1_Load;
-            // 
             // Form1
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
-            Controls.Add(cartesianChart1);
+            ClientSize = new Size(914, 600);
             Controls.Add(toolStrip1);
+            Margin = new Padding(3, 4, 3, 4);
             Name = "Form1";
             Text = "Fields Around Me";
             Load += Form1_Load;
@@ -126,73 +115,72 @@ namespace FAMApp
         private ToolStripMenuItem wifiToolStripMenuItem;
         private ToolStripMenuItem cloudToolStripMenuItem;
         private ToolStripMenuItem microSDToolStripMenuItem;
-        private LiveChartsCore.SkiaSharpView.WinForms.CartesianChart cartesianChart1;
 
 
 
 
-        private void LoadCSVAndPlot(string filePath)
-        {
-            try
-            {
-                // Check if .csv
-                if (Path.GetExtension(filePath).ToLower() != ".csv")
-                {
-                    MessageBox.Show("Select a CSV File", "Invalid File Type", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                string[] csvLines = File.ReadAllLines(filePath);
-
-                //Check file has at least 3 lines (frequency, timestamp, data)
-                if (csvLines.Length < 3)
-                {
-                    MessageBox.Show("The CSV file is missing necessary data.", "Invalid CSV Format", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                // Get Frequency and Timestamp
-                double samplingFrequency = double.Parse(csvLines[0], CultureInfo.InvariantCulture);
-                DateTime timestamp = DateTime.Parse(csvLines[1], CultureInfo.InvariantCulture);
-
-                // Get data from third line
-                string[] dataPoints = csvLines[2].Split(',');
-                var values = Array.ConvertAll(dataPoints, s => double.Parse(s, CultureInfo.InvariantCulture));
-
-                var series = new LineSeries<double>
-                {
-                    Values = values
-                };
-
-                cartesianChart1.Series = new ISeries[] { series };
-
-                // Configure axes
-                cartesianChart1.XAxes = new LiveChartsCore.SkiaSharpView.Axis[]
-                {
-            new LiveChartsCore.SkiaSharpView.Axis
-            {
-                Name = "Time (s)",
-                Labels = GenerateTimeLabels(samplingFrequency, values.Length)
-            }
-                };
-
-                cartesianChart1.YAxes = new LiveChartsCore.SkiaSharpView.Axis[]
-                {
-            new LiveChartsCore.SkiaSharpView.Axis
-            {
-                Name = "Values"
-            }
-                };
-            }
-            catch (FormatException fe)
-            {
-                MessageBox.Show($"File format error: {fe.Message}. Ensure the CSV has data in correct format(Frequency, Timestamp, Data)", "Format Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading and plotting CSV data: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
+//        private void LoadCSVAndPlot(string filePath)
+//        {
+//            try
+//            {
+//                // Check if .csv
+//                if (Path.GetExtension(filePath).ToLower() != ".csv")
+//                {
+//                    MessageBox.Show("Select a CSV File", "Invalid File Type", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+//                    return;
+//                }
+//
+//                string[] csvLines = File.ReadAllLines(filePath);
+//
+//                //Check file has at least 3 lines (frequency, timestamp, data)
+//                if (csvLines.Length < 3)
+//                {
+//                    MessageBox.Show("The CSV file is missing necessary data.", "Invalid CSV Format", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+//                    return;
+//                }
+//
+//                // Get Frequency and Timestamp
+//                double samplingFrequency = double.Parse(csvLines[0], CultureInfo.InvariantCulture);
+//                DateTime timestamp = DateTime.Parse(csvLines[1], CultureInfo.InvariantCulture);
+//
+//                // Get data from third line
+//                string[] dataPoints = csvLines[2].Split(',');
+//                var values = Array.ConvertAll(dataPoints, s => double.Parse(s, CultureInfo.InvariantCulture));
+//
+//                var series = new LineSeries<double>
+//                {
+//                    Values = values
+//                };
+//
+//                cartesianChart1.Series = new ISeries[] { series };
+//
+//                // Configure axes
+//                cartesianChart1.XAxes = new LiveChartsCore.SkiaSharpView.Axis[]
+//                {
+//            new LiveChartsCore.SkiaSharpView.Axis
+//           {
+//               Name = "Time (s)",
+//               Labels = GenerateTimeLabels(samplingFrequency, values.Length)
+//           }
+//               };
+//
+//               cartesianChart1.YAxes = new LiveChartsCore.SkiaSharpView.Axis[]
+//               {
+//           new LiveChartsCore.SkiaSharpView.Axis
+//           {
+//               Name = "Values"
+//           }
+//               };
+//           }
+//           catch (FormatException fe)
+//           {
+//               MessageBox.Show($"File format error: {fe.Message}. Ensure the CSV has data in correct format(Frequency, Timestamp, Data)", "Format Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+//           }
+//           catch (Exception ex)
+//           {
+//               MessageBox.Show($"Error loading and plotting CSV data: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+//           }
+//       }
 
 
         private string[] GenerateTimeLabels(double samplingFrequency, int numberOfPoints)
