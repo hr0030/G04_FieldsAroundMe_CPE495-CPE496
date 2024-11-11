@@ -1,0 +1,4 @@
+sudo service mosquitto start
+cd ./Desktop/FAM_App/python
+source myenv/bin/activate
+python client.py
