@@ -1,13 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Globalization; // Added for Parsing of CSV file
-using LiveChartsCore; // Core library
-using LiveChartsCore.SkiaSharpView; // Core components
-using LiveChartsCore.SkiaSharpView.WinForms; // For WinForms components
 using System.Drawing;
 using System.Windows.Forms;
-using LiveCharts.Wpf;
-using LiveCharts;
 
 namespace FAMApp
 {
@@ -119,68 +114,7 @@ namespace FAMApp
 
 
 
-//        private void LoadCSVAndPlot(string filePath)
-//        {
-//            try
-//            {
-//                // Check if .csv
-//                if (Path.GetExtension(filePath).ToLower() != ".csv")
-//                {
-//                    MessageBox.Show("Select a CSV File", "Invalid File Type", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-//                    return;
-//                }
-//
-//                string[] csvLines = File.ReadAllLines(filePath);
-//
-//                //Check file has at least 3 lines (frequency, timestamp, data)
-//                if (csvLines.Length < 3)
-//                {
-//                    MessageBox.Show("The CSV file is missing necessary data.", "Invalid CSV Format", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-//                    return;
-//                }
-//
-//                // Get Frequency and Timestamp
-//                double samplingFrequency = double.Parse(csvLines[0], CultureInfo.InvariantCulture);
-//                DateTime timestamp = DateTime.Parse(csvLines[1], CultureInfo.InvariantCulture);
-//
-//                // Get data from third line
-//                string[] dataPoints = csvLines[2].Split(',');
-//                var values = Array.ConvertAll(dataPoints, s => double.Parse(s, CultureInfo.InvariantCulture));
-//
-//                var series = new LineSeries<double>
-//                {
-//                    Values = values
-//                };
-//
-//                cartesianChart1.Series = new ISeries[] { series };
-//
-//                // Configure axes
-//                cartesianChart1.XAxes = new LiveChartsCore.SkiaSharpView.Axis[]
-//                {
-//            new LiveChartsCore.SkiaSharpView.Axis
-//           {
-//               Name = "Time (s)",
-//               Labels = GenerateTimeLabels(samplingFrequency, values.Length)
-//           }
-//               };
-//
-//               cartesianChart1.YAxes = new LiveChartsCore.SkiaSharpView.Axis[]
-//               {
-//           new LiveChartsCore.SkiaSharpView.Axis
-//           {
-//               Name = "Values"
-//           }
-//               };
-//           }
-//           catch (FormatException fe)
-//           {
-//               MessageBox.Show($"File format error: {fe.Message}. Ensure the CSV has data in correct format(Frequency, Timestamp, Data)", "Format Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-//           }
-//           catch (Exception ex)
-//           {
-//               MessageBox.Show($"Error loading and plotting CSV data: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-//           }
-//       }
+
 
 
         private string[] GenerateTimeLabels(double samplingFrequency, int numberOfPoints)
