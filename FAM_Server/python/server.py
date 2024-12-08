@@ -37,49 +37,41 @@ with open(csv_file_name, mode='w', newline='') as file:
 def fetch_and_save_donki_data():
     try:
         api_endpoint = "https://api.nasa.gov/DONKI/GST"
-        api_key = "HSkpffGNq4SeOzWBlVvevS45zB5HUkX75g2uPmbO"  # API key from NASA(Tyler)
-        now = datetime.now()
-        start_date = "2024-01-01" #now.replace(day=1).strftime("%Y-%m-%d")
-        end_date = "2024-12-31" #now.strftime("%Y-%m-%d")
+        api_key = "HSkpffGNq4SeOzWBlVvevS45zB5HUkX75g2uPmbO"  # API key from NASA
+        start_date = "2024-01-01"
+        end_date = "2024-12-31"
 
         # Build the request URL
         url = f"{api_endpoint}?startDate={start_date}&endDate={end_date}&api_key={api_key}"
 
-    # Fetch the data
+        # Fetch the data
         response = requests.get(url)
-        response.raise_for_status()  
+        response.raise_for_status()
 
-        print(f"{response.status_code}")
-        print(f"{response.text}")
-        
+        print(f"HTTP Status: {response.status_code}")
         data = response.json()
         donki_csv_file_name = f"{datetime.now().strftime('%Y_%m_%d')}_api_donki.csv"
-        
-        # Output the fetched data
-        print(f"Geomagnetic storm data from {start_date} to {end_date}:")
-        for event in data:
-            print(f"ID: {event['gstID']}")
-            print(f"Start Time: {event['startTime']}")
-            print(f"KP Index: {event.get('kpIndex', 'N/A')}")
-            print(f"Link: {event['link']}\n")
+
+        # Save data to CSV
+        with open(donki_csv_file_name, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(["gstID", "Start Time", "KP Index", "Link"])  # Header
+            for event in data:
+                gstID = event.get("gstID", "N/A")
+                start_time = event.get("startTime", "N/A")
+                kp_index = ", ".join(str(kp.get("kpIndex", "N/A")) for kp in event.get("allKpIndex", []))
+                link = event.get("link", "N/A")
+                writer.writerow([gstID, start_time, kp_index, link])
+
+        print(f"Geomagnetic storm data saved to {donki_csv_file_name}")
+
+        # Publish data to the MQTT topic api/data
+        publish_csv_to_mqtt(donki_csv_file_name, "api/data")
+
     except requests.RequestException as e:
         print(f"Error fetching NASA DONKI API data: {e}")
     except Exception as e:
         print(f"Error processing NASA DONKI API data: {e}")
-
-# Function to handle "live" command
-def handle_live_command():
-    print("Received 'live' command. Outputting today's CSV data.")
-    try:
-        # Open the CSV file and print its contents
-        with open(csv_file_name, mode='r') as file:
-            reader = csv.reader(file)
-            next(reader)  # Skip the header
-            print(f"Data from {csv_file_name}:")
-            for row in reader:
-                print(', '.join(row))
-    except FileNotFoundError:
-        print(f"No data file found for {csv_file_name}. Cannot output data.")
 
 # Callback function to handle received messages
 def on_message(client, userdata, msg):
@@ -88,10 +80,11 @@ def on_message(client, userdata, msg):
 
     # Check what command
     if msg.topic == command_topic and message.lower() == "live":
-        handle_live_command()
+        print("Received 'live' command. Outputting today's CSV data.")
+        publish_csv_to_mqtt(csv_file_name, "sensor/data")
     elif msg.topic == command_topic and message.lower() == "fetch_donki":
         fetch_and_save_donki_data()
-    else:
+    elif msg.topic == esp32_topic:
         # Write Data to CSV
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         formatted_message = f"{timestamp},{message}"
@@ -104,6 +97,21 @@ def on_message(client, userdata, msg):
         # Republish the received data
         client.publish(republish_topic, formatted_message)
         print(f"Republished to {republish_topic}: {formatted_message}")
+
+
+def publish_csv_to_mqtt(file_name, mqtt_topic):
+    try:
+        with open(file_name, mode='r') as file:
+            reader = csv.reader(file)
+            next(reader)  # Skip the header row
+            for row in reader:
+                message = ", ".join(row)
+                client.publish(mqtt_topic, message)
+                print(f"Published to {mqtt_topic}: {message}")
+    except FileNotFoundError:
+        print(f"File {file_name} not found. Cannot publish data.")
+    except Exception as e:
+        print(f"Error publishing data to MQTT topic: {e}")
 
 client = mqtt.Client()
 client.on_message = on_message
