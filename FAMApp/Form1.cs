@@ -57,8 +57,6 @@ namespace FAMApp
         private void wifiToolStripMenuItem_Click(object sender, EventArgs e)
         {
             string ipAddress = PromptForIPAddress();
-            Debug.WriteLine("Checkpoint 3: Enter IP");
-
             if (!string.IsNullOrEmpty(ipAddress))
             {
                 MqttReceiver(ipAddress);
@@ -90,7 +88,7 @@ namespace FAMApp
             {
                 using (var reader = new StreamReader(filePath))
                 {
-                    reader.ReadLine(); 
+                    reader.ReadLine(); // Skip header line
 
                     while (!reader.EndOfStream)
                     {
@@ -106,17 +104,8 @@ namespace FAMApp
                     }
                 }
 
-                double[] xs = dates.ConvertAll(date => date.ToOADate()).ToArray();
-                double[] ys = voltages.ToArray();
-
-                formsPlot.Plot.Clear();
-                var linePlot = formsPlot.Plot.Add.Scatter(xs, ys);
-                linePlot.Label = "Voltage(mV)";
-                linePlot.LineWidth = 2;
-                linePlot.MarkerSize = 1;
-
-                formsPlot.Plot.Axes.AutoScale();
-                formsPlot.Refresh();
+                // Call the plotting function with the extracted data
+                PlotData(dates, voltages, "Voltage(mV)");
             }
             catch (Exception ex)
             {
@@ -139,8 +128,6 @@ namespace FAMApp
                 inputForm.Controls.Add(textBox);
                 inputForm.Controls.Add(confirmation);
                 inputForm.AcceptButton = confirmation;
-
-                Debug.WriteLine("Checkpoint 2: Prompt for IP");
                 if (inputForm.ShowDialog() == DialogResult.OK)
                 {
                     return textBox.Text;
@@ -157,7 +144,7 @@ namespace FAMApp
 
             var factory = new MqttFactory();
             _client = factory.CreateMqttClient();
-            
+
             _options = new MqttClientOptionsBuilder()
                 .WithClientId("CSHarpClient")
                 .WithTcpServer(ipAddress)
@@ -166,6 +153,17 @@ namespace FAMApp
             _client.ConnectedAsync += async e =>
             {
                 Debug.WriteLine("Connected to MQTT broker.");
+
+                // Publish "live" to the "desktop/commands" topic
+                var message = new MqttApplicationMessageBuilder()
+                    .WithTopic("desktop/commands")
+                    .WithPayload("live")
+                    .Build();
+
+                await _client.PublishAsync(message);
+                Debug.WriteLine("Published 'live' to 'desktop/commands'.");
+
+                // Subscribe to the "sensor/data" topic
                 await _client.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic("sensor/data").Build());
                 Debug.WriteLine("Subscribed to topic 'sensor/data'.");
             };
@@ -181,32 +179,29 @@ namespace FAMApp
                 string payload = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
                 Debug.WriteLine("Message received event triggered");
 
-                if (double.TryParse(payload, out double voltage))
+                // Parse the payload (expected format: "timestamp,data")
+                var parts = payload.Split(',');
+                if (parts.Length == 2 &&
+                    DateTime.TryParse(parts[0], out DateTime timestamp) &&
+                    double.TryParse(parts[1], out double voltage))
                 {
-                    DateTime currentTime = DateTime.Now;
-                    _dates.Add(currentTime);
+                    _dates.Add(timestamp);
                     _voltages.Add(voltage);
 
-                    double[] xs = _dates.ConvertAll(date => date.ToOADate()).ToArray(); // Gets current time
-                    double[] ys = _voltages.ToArray();
-
+                    // Invoke PlotData on the main thread
                     formsPlot.Invoke((MethodInvoker)(() =>
                     {
-                        formsPlot.Plot.Clear();
-                        var linePlot = formsPlot.Plot.Add.Scatter(xs, ys);
-                        linePlot.Label = "Voltage(mV)";
-                        linePlot.LineWidth = 2;
-                        linePlot.MarkerSize = 1;
-                        formsPlot.Plot.Axes.AutoScale();
-                        formsPlot.Refresh();
+                        PlotData(_dates, _voltages, "Voltage(mV)");
                     }));
                 }
                 else
                 {
-                    Debug.WriteLine($"Failed to parse voltage from payload: {payload}");
+                    Debug.WriteLine($"Failed to parse payload: {payload}");
                 }
             };
         }
+
+
 
         public async Task StartAsync()
         {
@@ -225,6 +220,30 @@ namespace FAMApp
         {
             await _client.DisconnectAsync();
         }
+
+        private void PlotData(List<DateTime> timestamps, List<double> data, string label)
+        {
+            try
+            {
+                double[] xs = timestamps.ConvertAll(date => date.ToOADate()).ToArray();
+                double[] ys = data.ToArray();
+
+                formsPlot.Plot.Clear();
+                var linePlot = formsPlot.Plot.Add.Scatter(xs, ys);
+                linePlot.Label = label;
+                linePlot.LineWidth = 2;
+                linePlot.MarkerSize = 1;
+
+                formsPlot.Plot.Axes.AutoScale();
+                formsPlot.Refresh();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error plotting data: {ex.Message}");
+            }
+        }
     }
 }
+
+
 
