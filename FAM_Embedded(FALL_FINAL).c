@@ -528,7 +528,6 @@ void app_main(void) {
     reset_openlog();
     openlog_uart_init();
 
-    checkAdcMode();
 
     // ADC Data Sampling and Logging Loop
     while (1) {
