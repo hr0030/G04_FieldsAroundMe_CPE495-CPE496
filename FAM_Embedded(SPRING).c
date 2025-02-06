@@ -8,9 +8,11 @@
 ******************************************/
 #include <stdio.h>
 #include <time.h>
+#include <sys/time.h>
 #include <string.h>
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "freertos/portmacro.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -27,6 +29,8 @@
 #include "esp_event.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
+#include "esp_sntp.h"
+#include "freertos/semphr.h"
 #include <inttypes.h>
 
 /******************************************
@@ -34,6 +38,16 @@
 ******************************************/
 //#define ENABLE_MULTI_CHANNELS  // Comment out to disable multi-channel functionality
 #define TAG "ESP32_Project"
+static SemaphoreHandle_t adc_semaphore;  // Semaphore to signal ADC read
+esp_timer_handle_t adc_timer;            // Timer handle
+static esp_timer_handle_t adc_timer_handle;
+
+// ENTER YOUR WIFI INFO HERE
+#define ESP_WIFI_SSID      "Student5"
+#define ESP_WIFI_PASS      "Go Chargers!"
+
+// Sampling Frequency
+uint16_t fs = 48;   // FS values of 19 and 48 correspond to ~250Hz and ~100Hz per channel, respectively
 
 // UART Configurations for OpenLog. 
 #define UART_PORT_NUM      UART_NUM_1
@@ -48,13 +62,12 @@ spi_device_handle_t handle;
 // MQTT variables
 static esp_mqtt_client_handle_t client;
 static bool mqtt_connected = false;
-
+char Current_Date_Time[100];
 uint8_t txData[4] = {0};
 
 /****************************
 *      UART FUNCTIONS     *
 ****************************/
-// Initialize UART for OpenLog communication
 void openlog_uart_init() 
 {
     // UART configuration
@@ -72,10 +85,9 @@ void openlog_uart_init()
     uart_param_config(UART_PORT_NUM, &uart_config);
     uart_set_pin(UART_PORT_NUM, UART_TX_PIN, UART_RX_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 
-    ESP_LOGI(TAG, "OpenLog UART initialized.");
+    printf("UART Initialized!\n");
 }
 
-// Reset OpenLog before data logging
 void reset_openlog() 
 {
     gpio_config_t io_conf = 
@@ -89,20 +101,19 @@ void reset_openlog()
     gpio_config(&io_conf);
 
     // Send a reset pulse
-    ESP_LOGI(TAG, "Resetting OpenLog...");
+    printf("Resetting Openlog...\n");
     gpio_set_level(OPENLOG_RESET_PIN, 0); // Assert reset (low)
     vTaskDelay(pdMS_TO_TICKS(100));       // Hold for 100 ms
     gpio_set_level(OPENLOG_RESET_PIN, 1); // Deassert reset (high)
     vTaskDelay(pdMS_TO_TICKS(100));       // Wait for OpenLog to initialize
-    ESP_LOGI(TAG, "OpenLog reset complete.");
+    printf("Reset Complete!\n");
 }
 
-// Log ADC data to OpenLog
 void log_to_openlog(const char *log_line) 
 {
     // Send the log line to UART
     uart_write_bytes(UART_PORT_NUM, log_line, strlen(log_line));
-    ESP_LOGI(TAG, "Logged to OpenLog: %s", log_line);
+    //printf("Openlog Recieved: %s", log_line);
 }
 
 /******************************************
@@ -133,10 +144,10 @@ static void spi_init()
         .duty_cycle_pos = 0,
         .cs_ena_posttrans = 0,
         .cs_ena_pretrans = 0,
-        .clock_speed_hz = 4000000, // 4MHZ SPI CLOCK SPEED
+        .clock_speed_hz = 614400, // 614.4kHz SPI CLOCK SPEED
         .spics_io_num = 18,
         .flags = 0, 
-        .queue_size = 1,
+        .queue_size = 2,
         .pre_cb = NULL,
         .post_cb = NULL,
     };
@@ -226,7 +237,7 @@ int adcRead(uint8_t reg, uint8_t *data, size_t len)
     }
     printf("\n");
 
-    return ESP_OK;
+    return 0;
 }
 
 int readData(int32_t *pData)
@@ -242,14 +253,12 @@ int readData(int32_t *pData)
         return ret;
     }
 
-    // Debug: Print raw ADC bytes received
+    /*// Debug: Print raw ADC bytes received
     uint32_t rawHexValue = ((uint32_t)rxBuffer[1] << 16) | ((uint32_t)rxBuffer[2] << 8) | rxBuffer[3];
-    printf("Raw ADC Bytes: 0x%02X 0x%02X 0x%02X |", rxBuffer[1], rxBuffer[2], rxBuffer[3]);
+    printf("Raw ADC Bytes: 0x%02X 0x%02X 0x%02X |", rxBuffer[1], rxBuffer[2], rxBuffer[3]);*/
 
-    // Combine the 3 bytes into a 24-bit signed value
-    *pData = (rxBuffer[1] << 16) | (rxBuffer[2] << 8) | rxBuffer[3];
-
-    return ESP_OK;
+    *pData = (rxBuffer[1] << 16) | (rxBuffer[2] << 8) | rxBuffer[3];    // Combine the 3 bytes into a 24-bit signed value
+    return 0;
 }
 
 long getData()
@@ -257,12 +266,32 @@ long getData()
     int32_t value = 0;
     int ret = readData(&value);
 
-    if (ret != ESP_OK) 
+    if (ret != 0) 
     {
         return ret; // Return error if the read fails
     }
 
     return (long)value;
+}
+
+void IRAM_ATTR adc_timer_callback(void* arg) // interrupt for sampling
+{
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xSemaphoreGiveFromISR(adc_semaphore, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+void setup_adc_timer(uint64_t interval_us) 
+{
+    esp_timer_create_args_t adc_timer_args = {
+        .callback = &adc_timer_callback,
+        .arg = NULL,
+        .name = "adc_timer"
+    };
+
+    ESP_ERROR_CHECK(esp_timer_create(&adc_timer_args, &adc_timer_handle));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(adc_timer_handle, interval_us));
+    printf("ADC Timer set to %llu us interval\n", interval_us);
 }
 
 double toVoltage(long value, int gain, double vref, bool bipolar) 
@@ -287,17 +316,19 @@ double toVoltage(long value, int gain, double vref, bool bipolar)
 int setAdcControl(uint8_t mode, uint8_t power, uint8_t clkSource, bool enable)
 {
     uint16_t control = 0;
-
-    control |= AD7124_ADC_CTRL_REG_MODE(mode);
-    control |= AD7124_ADC_CTRL_REG_POWER_MODE(power);
-    control |= AD7124_ADC_CTRL_REG_CLK_SEL(clkSource);
+    control |= AD7124_ADC_CTRL_REG_MODE(mode);  // Set mode (bits 5:2)
+    control |= AD7124_ADC_CTRL_REG_POWER_MODE(power);   // Set power mode (bits 7:6)
+    control |= AD7124_ADC_CTRL_REG_CLK_SEL(clkSource);  // Set clock source (bits 1:0)
+    
     if (enable) 
     {
-        control |= AD7124_ADC_CTRL_REG_REF_EN;
+        control |= AD7124_ADC_CTRL_REG_REF_EN;  // Enable internal reference 
     }
+    
+    control |= AD7124_ADC_CTRL_REG_CONT_READ; 
     control |= AD7124_ADC_CTRL_REG_CS_EN;
 
-    uint8_t controlBytes[2] = {control >> 8, control & 0xFF};
+    uint8_t controlBytes[2] = { (uint8_t)(control >> 8), (uint8_t)(control & 0xFF) };
     return adcWrite(AD7124_ADC_CTRL_REG, controlBytes, 2);
 }
 
@@ -316,52 +347,26 @@ int setConfig(uint8_t configNum, uint8_t reference, uint8_t gain, bool bipolar)
     return adcWrite(AD7124_CFG0_REG + configNum, configBytes, 2);
 }
 
-int setConfigFilter(uint8_t filterNum, uint8_t filterType, uint16_t targetSPS, bool enableRej60)
+int setConfigFilter(uint8_t filterNum, uint8_t filterType, uint16_t fs, bool enableRej60) 
 {
     uint32_t filter = 0;
-    const double f_master = 614400.0; // in Hz
-    uint16_t fs = (uint16_t)(f_master / (targetSPS * 32));
-    if (fs < 1) fs = 1;       // Clamp to minimum FS
-    if (fs > 2047) fs = 2047; // Clamp to maximum FS
-
-    // Set the filter type (Sinc4 by default)
-    filter |= AD7124_FILT_REG_FILTER(filterType); 
-
-    // Enable 60 Hz 
-    if (enableRej60) 
-    {
-        filter |= AD7124_FILT_REG_REJ60;
-    }
-    filter |= AD7124_FILT_REG_FS(fs);
-
+    uint16_t fs_reg = (uint16_t)fs;
+    
+    filter |= AD7124_FILT_REG_FILTER(filterType);
+    if (enableRej60) filter |= AD7124_FILT_REG_REJ60;
+    filter |= AD7124_FILT_REG_FS(fs_reg);
+    
     // Create filter configuration bytes
     uint8_t filterBytes[3] = {
         (filter >> 16) & 0xFF,
         (filter >> 8) & 0xFF,
         filter & 0xFF
     };
-
-    // Write the configuration to the appropriate filter register
-    return adcWrite(AD7124_FILT0_REG + filterNum, filterBytes, 3);
+    
+    // Write the filter configuration
+    int status = adcWrite(AD7124_FILT0_REG + filterNum, filterBytes, 3);
+    return status;
 }
-
-
-/*int setConfigFilter(uint8_t filterNum, uint8_t filterType, uint16_t filterWord)
-{
-    uint32_t filter = 0;
-
-    filter |= AD7124_FILT_REG_FILTER(filterType); // Filter type (e.g., Sinc4)
-    filter |= AD7124_FILT_REG_FS(filterWord);     // Filter word
-
-    uint8_t filterBytes[3] = 
-    {
-        (filter >> 16) & 0xFF,
-        (filter >> 8) & 0xFF,
-        filter & 0xFF
-    };
-
-    return adcWrite(AD7124_FILT0_REG + filterNum, filterBytes, 3);
-}*/
 
 int setChannel(uint8_t channelNum, uint8_t configNum, uint8_t posInput, uint8_t negInput, bool enable)
 {
@@ -383,7 +388,7 @@ int enableChannel(uint8_t channelNum, bool enable)
 {
     uint8_t channelBytes[2] = {0};
     int status = adcRead(AD7124_CH0_MAP_REG + channelNum, channelBytes, 2);
-    if (status != ESP_OK) 
+    if (status != 0) 
     {
         return status;
     }
@@ -404,44 +409,35 @@ int enableChannel(uint8_t channelNum, bool enable)
     return adcWrite(AD7124_CH0_MAP_REG + channelNum, channelBytes, 2);
 }
 
-void ad7124_init(uint16_t target_sps)
+void ad7124_init(uint16_t fs) 
 {
-    // Configure ADC control
-    int status = setAdcControl(0x00, 0x03, 0x00, false); // Continuous, full power, internal clock, REF_EN = true
-    //printf("ADC control set status: %d\n", status);
+    int status = setAdcControl(0x00, 0x02, 0x00, false); // Continuous conversion/read mode, Full-power, internal clk, internal ref = false
+    printf("ADC control set status: %d\n", status);
 
-    // Set default configuration for input channel(s)
-    status = setConfig(0, 0x00, 0x00, true); // Config 0, REF1- & REF1+, Gain=1, Unipolar = False, Bipolar = True
-    //printf("ADC config set status: %d\n", status);
+    status = setConfig(0, 0x00, 0x00, true);    // config #1, REFIN+ & REFIN- references, gain = 1, bipolar mode on
+    printf("ADC configuration set status: %d\n", status);
 
-    // Calculate Filter Word (FS) for target SPS
-    uint16_t filterWord = target_sps;
-    status = setConfigFilter(0, 0x00, filterWord, true); // Sinc4 filter with target SPS
+    status = setConfigFilter(0, 0x04, fs, true); // Sinc4 Filter, variable FS, 60Hz notch filter enabled
     printf("ADC filter set status: %d\n", status);
 
-    // Configure and enable channels
-    status = setChannel(0, 0, 0x00, 0x01, true); // Channel 0: AIN0(+) to AIN1(-)
-    //printf("Channel 0 set status: %d\n", status);
+    /*double fADC = 614400.0 / (32.0 * fs);
+    double sampling_interval_ms = (1.0 / fADC) * 1000.0;    //DEBUG STUFF FOR FINDING SAMPLING FREQUENCY
+    printf("ADC Configured: FS=%d, fADC=%.2f SPS, Sampling Interval=%.3f ms\n", fs, fADC, sampling_interval_ms);*/
 
-    #ifdef ENABLE_MULTI_CHANNELS
-    // Configure and enable Channel 1 (AIN2 & AIN3)
-    status = setChannel(1, 0, 0x02, 0x03, true); // Channel 1: AIN2(+) to AIN3(-)
-    //printf("Channel 1 set status: %d\n", status);
+    // Enable all 4 ADC channels (Differential Mode)
+    status = setChannel(0, 0, 0x00, 0x01, true); // AIN0 (+) to AIN1 (-)
+    printf("Channel 0 set status: %d\n", status);
+    status = setChannel(1, 0, 0x02, 0x03, true); // AIN2 (+) to AIN3 (-)
+    printf("Channel 1 set status: %d\n", status);
+    status = setChannel(2, 0, 0x04, 0x05, true); // AIN4 (+) to AIN5 (-)
+    printf("Channel 2 set status: %d\n", status);
+    status = setChannel(3, 0, 0x06, 0x07, true); // AIN6 (+) to AIN7 (-)
+    printf("Channel 3 set status: %d\n", status);
 
-    // Configure and enable Channel 2 (AIN4 & AIN5)
-    status = setChannel(2, 0, 0x04, 0x05, true); // Channel 2: AIN4(+) to AIN5(-)
-    //printf("Channel 2 set status: %d\n", status);
-
-    // Configure and enable Channel 3 (AIN6 & AIN7)
-    status = setChannel(3, 0, 0x06, 0x07, true); // Channel 3: AIN6(+) to AIN7(-)
-    //printf("Channel 3 set status: %d\n", status);
-    #endif
-
-    // Disable unused channels
-    for (int i = 4; i < 8; i++) 
+    for (int i = 0; i < 4; i++) 
     {
-        status = enableChannel(i, false);
-        printf("Channel %d disable status: %d\n", i, status);
+        status = enableChannel(i, true);    // enable all channels
+        printf("Channel %d enable status: %d\n", i, status);
     }
 }
 
@@ -449,14 +445,15 @@ void ad7124_init(uint16_t target_sps)
 *            WIFI FUNCTIONS             *
 ******************************************/
 // Wi-Fi Event Handler
-static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) 
+{
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) 
     {
         esp_wifi_connect();
     } 
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) 
     {
-        ESP_LOGI(TAG, "Wi-Fi disconnected, reconnecting...");
+        printf("Wi-Fi disconnected, reconnecting...");
         esp_wifi_connect();
     } 
     else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) 
@@ -483,46 +480,45 @@ static void wifi_init(void)
     {
         .sta = 
         {
-            .ssid = "Student5",    // ENTER YOUR WIFI USERNAME AND PASSWORD HERE
-            .password = "Go Chargers!"
+            .ssid = ESP_WIFI_SSID,
+            .password = ESP_WIFI_PASS
         },
     };
-
     esp_wifi_set_mode(WIFI_MODE_STA);
     esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
     esp_wifi_start();
 }
 
 /******************************************
-*           MQTT FUNCTIONS              *
+*           MQTT & SNTP FUNCTIONS         *
 ******************************************/
 // MQTT Event Handler
-static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
+static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) 
+{
     esp_mqtt_event_handle_t event = (esp_mqtt_event_handle_t)event_data;
 
     switch ((esp_mqtt_event_id_t)event_id) 
     {
     case MQTT_EVENT_CONNECTED:
-        ESP_LOGI(TAG, "MQTT Connected");
+        printf("\nMQTT Connected\n");
         mqtt_connected = true;
         break;
 
     case MQTT_EVENT_DISCONNECTED:
-        ESP_LOGI(TAG, "MQTT Disconnected");
-        
+        printf("\nMQTT Disconnected\n");
         mqtt_connected = false;
         break;
 
     case MQTT_EVENT_PUBLISHED:
-        ESP_LOGI(TAG, "Message Published: msg_id=%d", event->msg_id);
+        printf("\nMessage ID Sent: %d\n", event->msg_id);
         break;
 
     case MQTT_EVENT_ERROR:
-        ESP_LOGE(TAG, "MQTT Error");
+        printf("\nMQTT Error\n");
         break;
 
     default:
-        ESP_LOGI(TAG, "Unhandled MQTT Event: %" PRId32, event_id);
+        ESP_LOGI(TAG, "\nUnhandled MQTT Event: %" PRId32, event_id);
         break;
     }
 }
@@ -541,6 +537,64 @@ void mqtt_app_start(void)
     esp_mqtt_client_start(client);
 }
 
+static void init_SNTP(void)
+{
+    //ESP_LOGI(TAG, "Initializing SNTP");
+    printf("Initializing SNTP\n");
+    esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    esp_sntp_setservername(0, "pool.ntp.org");  // calls on external server to grab real time information
+    esp_sntp_set_time_sync_notification_cb(NULL);  // No callback needed for now
+    esp_sntp_init();
+}
+
+static void obtain_time(void)
+{
+    init_SNTP();
+    time_t now = 0;
+    struct tm timeinfo = { 0 };
+    int retry = 0;
+    const int retry_count = 10;
+
+    while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET && ++retry < retry_count) 
+    {
+        //ESP_LOGI(TAG, "Waiting for system time to sync... (%d/%d)", retry, retry_count);
+        printf("Waiting for Sync... (%d|%d)\n", retry, retry_count);
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+    }
+    time(&now);
+    localtime_r(&now, &timeinfo);
+}
+
+void Get_current_date_time(char *date_time)
+{
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+
+    // Set timezone 
+    setenv("TZ", "UTC+05:00", 1); // UTC-5 (CST)
+    tzset();
+    strftime(date_time, 100, "%Y-%m-%d %H:%M:%S", &timeinfo);
+}
+
+void Set_SystemTime_SNTP(void)
+{
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+
+    // Check if time is set 
+    if (timeinfo.tm_year < (2016 - 1900)) 
+    {
+        //ESP_LOGI(TAG, "Time is not set. Connecting to WiFi and syncing via NTP.");
+        printf("Time not set! Attempting to Re-Sync...\n");
+        obtain_time();
+        time(&now); // Update time after syncing
+    }
+}
+
 /******************************************
 *           MAIN APPLICATION            *
 ******************************************/
@@ -555,81 +609,59 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    // Initialize Wi-Fi
-    wifi_init();
+    wifi_init();    // Initialize Wi-Fi 
+    vTaskDelay(2000 / portTICK_PERIOD_MS); // Ensure Wi-Fi stabilizes before SNTP
+    Set_SystemTime_SNTP();  // Initialize and set SNTP
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+    mqtt_app_start();   // Start MQTT 
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+    spi_init();     // SPI initialization for ADC
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+    ADC_reset();    // Reset the ADC
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+    ad7124_init(fs);    // ADC initialization. Filter Setting (FS) divisor value determined at top of program
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+    reset_openlog();    // Reset Openlog
+    openlog_uart_init();    // Initialize Openlog
 
-    // Start MQTT
-    mqtt_app_start();
+    const double f_master = 614400.0; // Full power mode master clock (Hz)
+    double fADC = f_master / (32.0 * fs);   // Total ADC sampling rate
+    int enabled_channels = 4;  // Set to the number of active ADC channels
+    double per_channel_sps = fADC / enabled_channels; // Per-channel sampling rate
+    uint64_t sample_period_us = (uint64_t)(1000000.0 / per_channel_sps); // Microsecond period
 
-    // SPI initialization for ADC
-    spi_init();
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    adc_semaphore = xSemaphoreCreateBinary(); // Create semaphore
+    setup_adc_timer(sample_period_us);  // Set up timer
+    uint64_t last_time = esp_timer_get_time(); // Initial timestamp
 
-    // Reset the ADC
-    ADC_reset();
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-    // Initialize ADC with a target sampling frequency 
-    uint16_t target_sps = 100; // Example: Target SPS (100Hz)
-    ad7124_init(target_sps);
-    vTaskDelay(500 / portTICK_PERIOD_MS);
-
-    // Reset and initialize OpenLog
-    //reset_openlog();
-    //openlog_uart_init();
-
-    // Start ADC data sampling and logging loop
     while (1) 
     {
-        // Loop through all enabled ADC channels
-        #ifdef ENABLE_MULTI_CHANNELS
-            for (int channel = 0; channel < 4; channel++) // Assuming 4 channels
-        #else
-            for (int channel = 0; channel < 1; channel++) // Single-channel mode
-        #endif
+        if (xSemaphoreTake(adc_semaphore, portMAX_DELAY) == 1) 
         {
             int32_t adcValue = 0;
-            if (readData(&adcValue) == ESP_OK) 
+            if (readData(&adcValue) == 0) 
             {
-                // Convert ADC value to voltage
-                double voltage = toVoltage(adcValue, 1, 3.0, true);
-                //printf("Channel %d: ADC Value: %ld, Voltage: %.6f V\n", channel, adcValue, voltage);
+                /*double voltage = toVoltage(adcValue, 1, 3.0, true);
+                char log_line[150];
+                Get_current_date_time(Current_Date_Time);
+                snprintf(log_line, sizeof(log_line), "%s, Channel, %g V\n", Current_Date_Time, voltage);
 
-                // Get current timestamp for OpenLog
-                time_t now;
-                time(&now);
-                struct tm timeinfo;
-                localtime_r(&now, &timeinfo);
-
-                char timestamp[20];
-                strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &timeinfo);
-
-                // Prepare log line for OpenLog (with timestamp and voltage)
-                char log_line[100];
-                snprintf(log_line, sizeof(log_line), "%s, Channel %d, %g\n", timestamp, channel, voltage);
-
-                // Publish voltage to MQTT
                 if (mqtt_connected) 
                 {
                     char message[50];
-                    snprintf(message, sizeof(message), "Channel %d: %g V", channel, voltage);
+                    snprintf(message, sizeof(message), "Channel 0: %g V", voltage);
                     esp_mqtt_client_publish(client, "esp32/sensor/data", message, 0, 1, 0);
-                    ESP_LOGI(TAG, "Published to MQTT: %s", message);
                 } 
-                else 
-                {
-                    ESP_LOGW(TAG, "MQTT not connected, skipping publish");
-                }
-
-                // Log data to OpenLog
-                //log_to_openlog(log_line);
+                log_to_openlog(log_line);*/   // **Log to SD card**
+                uint64_t current_time = esp_timer_get_time();
+                double actual_sps = 1.0 / ((current_time - last_time) / 1000000.0);
+                last_time = current_time;
+                printf("%.1f Hz\n", actual_sps);
             } 
             else 
             {
-                printf("Error reading ADC data on Channel %d\n", channel);
+                printf("Error reading ADC data\n");
             }
         }
-
-        vTaskDelay((1000 / target_sps) / portTICK_PERIOD_MS); 
     }
 }
