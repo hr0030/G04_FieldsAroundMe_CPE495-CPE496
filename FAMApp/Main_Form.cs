@@ -18,6 +18,7 @@ using ScottPlot.Plottables;
 using static ScottPlot.Generate;
 using DateTime = System.DateTime;
 using System.Threading.Channels;
+using static FAMApp.Settings_Form;
 
 namespace FAMApp
 {
@@ -40,6 +41,11 @@ namespace FAMApp
             InitializeComponent();
             InitializeChart();
             InitializeNewAPIPlot();
+        }
+
+        public static class GlobalSettings
+        {
+            public static string ServerIP { get; set; }
         }
 
         private void InitializeChart()
@@ -82,16 +88,11 @@ namespace FAMApp
 
         private void geomagneticStormsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            string ipAddress = PromptForIPAddress();
-            if (!string.IsNullOrEmpty(ipAddress))
-            {
-                spawnAPIPopup();
-                MqttReceiver(ipAddress, "api/data", "fetch_donki");
-                _ = StartAsync();
-            }
+            getAPIGeneral("Power", "api/data", "fetch_donki");
         }
 
-        private void spawnAPIPopup()
+
+        private void spawnAPIPopup(string yAxisLabel)
         {
             // Create a new Form for the pop-out window
             Form popOutForm = new Form
@@ -103,13 +104,37 @@ namespace FAMApp
             popOutForm.Controls.Add(API_Plot);
             API_Plot.Plot.Axes.DateTimeTicksBottom();
             API_Plot.Plot.Axes.Bottom.Label.Text = "Date and Time";
-            API_Plot.Plot.Axes.Left.Label.Text = "Power";
+            API_Plot.Plot.Axes.Left.Label.Text = yAxisLabel;
             API_Plot.Refresh();
 
             // Show the pop-out window
             popOutForm.Show();
         }
 
+        private void getAPIGeneral(string yAxisLabel, string subscriberTopic, string commandPayload)
+        {
+            // Load the settings (if not already loaded)
+            SettingsLoader.LoadSettings();
+
+            // Get the IP address from the global variable
+            string ipAddress = GlobalSettings.ServerIP;
+
+            // Check if the IP address is not empty or null
+            if (!string.IsNullOrEmpty(ipAddress))
+            {
+                // Call the popup and MQTT receiver with the IP address
+                spawnAPIPopup(yAxisLabel);
+                MqttReceiver(ipAddress, subscriberTopic, commandPayload);
+
+                // Start the asynchronous process
+                _ = StartAsync();
+            }
+            else
+            {
+                // Handle the case where the IP address is not set
+                MessageBox.Show("IP Address is not configured.");
+            }
+        }
         private void Main_Form_Load(object sender, EventArgs e)
         {
 
@@ -117,11 +142,20 @@ namespace FAMApp
 
         private void wifiToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            string ipAddress = PromptForIPAddress();
+            // Load the settings (if not already loaded)
+            SettingsLoader.LoadSettings();
+
+            // Get the IP address from the global variable
+            string ipAddress = GlobalSettings.ServerIP;
             if (!string.IsNullOrEmpty(ipAddress))
             {
                 MqttReceiver(ipAddress, "sensor/data", "live");
                 _ = StartAsync();
+            }
+            else
+            {
+                // Handle the case where the IP address is not set
+                MessageBox.Show("IP Address is not configured.");
             }
         }
 
@@ -499,6 +533,39 @@ namespace FAMApp
             // If you want to show the form non-modally (allows interaction with both forms):
             // settingsForm.Show();
         }
+
+        public static class SettingsLoader
+        {
+            public static void LoadSettings()
+            {
+                try
+                {
+                    string filePath = "settings.json";
+
+                    if (File.Exists(filePath))
+                    {
+                        string json = File.ReadAllText(filePath);
+
+                        // Deserialize the JSON into a Settings object
+                        Settings settings = JsonConvert.DeserializeObject<Settings>(json);
+
+                        // Set the global ServerIP to the value read from the JSON
+                        GlobalSettings.ServerIP = settings.ServerIP;
+                    }
+                    else
+                    {
+                        MessageBox.Show("Settings file not found. Using default IP.");
+                        // Set a default IP if settings are not found
+                        GlobalSettings.ServerIP = "192.168.1.1";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error loading settings: {ex.Message}");
+                }
+            }
+        }
+
     }
 }
 
