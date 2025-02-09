@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace FAMApp
 {
-    partial class Form1
+    partial class Main_Form
     {
         /// <summary>
         ///  Required designer variable.
@@ -35,7 +35,7 @@ namespace FAMApp
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main_Form));
             toolStrip1 = new ToolStrip();
             sourceButton1 = new ToolStripDropDownButton();
             wifiToolStripMenuItem = new ToolStripMenuItem();
@@ -43,13 +43,17 @@ namespace FAMApp
             microSDToolStripMenuItem = new ToolStripMenuItem();
             geomagnetAPIToolStripMenuItem = new ToolStripMenuItem();
             geomagneticStormsToolStripMenuItem = new ToolStripMenuItem();
+            temperatureToolStripMenuItem = new ToolStripMenuItem();
+            humidityToolStripMenuItem = new ToolStripMenuItem();
+            sWIRRLElectricFieldToolStripMenuItem = new ToolStripMenuItem();
+            Settings_Button = new ToolStripButton();
             toolStrip1.SuspendLayout();
             SuspendLayout();
             // 
             // toolStrip1
             // 
             toolStrip1.ImageScalingSize = new Size(20, 20);
-            toolStrip1.Items.AddRange(new ToolStripItem[] { sourceButton1 });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { sourceButton1, Settings_Button });
             toolStrip1.Location = new Point(0, 0);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(800, 25);
@@ -90,7 +94,7 @@ namespace FAMApp
             // 
             // geomagnetAPIToolStripMenuItem
             // 
-            geomagnetAPIToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { geomagneticStormsToolStripMenuItem });
+            geomagnetAPIToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { geomagneticStormsToolStripMenuItem, temperatureToolStripMenuItem, humidityToolStripMenuItem, sWIRRLElectricFieldToolStripMenuItem });
             geomagnetAPIToolStripMenuItem.Name = "geomagnetAPIToolStripMenuItem";
             geomagnetAPIToolStripMenuItem.Size = new Size(180, 22);
             geomagnetAPIToolStripMenuItem.Text = "APIs";
@@ -102,15 +106,43 @@ namespace FAMApp
             geomagneticStormsToolStripMenuItem.Text = "Geomagnetic Storms";
             geomagneticStormsToolStripMenuItem.Click += geomagneticStormsToolStripMenuItem_Click;
             // 
-            // Form1
+            // temperatureToolStripMenuItem
+            // 
+            temperatureToolStripMenuItem.Name = "temperatureToolStripMenuItem";
+            temperatureToolStripMenuItem.Size = new Size(185, 22);
+            temperatureToolStripMenuItem.Text = "Temperature";
+            // 
+            // humidityToolStripMenuItem
+            // 
+            humidityToolStripMenuItem.Name = "humidityToolStripMenuItem";
+            humidityToolStripMenuItem.Size = new Size(185, 22);
+            humidityToolStripMenuItem.Text = "Humidity";
+            // 
+            // sWIRRLElectricFieldToolStripMenuItem
+            // 
+            sWIRRLElectricFieldToolStripMenuItem.Name = "sWIRRLElectricFieldToolStripMenuItem";
+            sWIRRLElectricFieldToolStripMenuItem.Size = new Size(185, 22);
+            sWIRRLElectricFieldToolStripMenuItem.Text = "SWIRRL Electric Field";
+            // 
+            // Settings_Button
+            // 
+            Settings_Button.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            Settings_Button.Image = (Image)resources.GetObject("Settings_Button.Image");
+            Settings_Button.ImageTransparentColor = Color.Magenta;
+            Settings_Button.Name = "Settings_Button";
+            Settings_Button.Size = new Size(53, 22);
+            Settings_Button.Text = "Settings";
+            Settings_Button.Click += Settings_Button_Click;
+            // 
+            // Main_Form
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
             Controls.Add(toolStrip1);
-            Name = "Form1";
+            Name = "Main_Form";
             Text = "Fields Around Me";
-            Load += Form1_Load;
+            Load += Main_Form_Load;
             toolStrip1.ResumeLayout(false);
             toolStrip1.PerformLayout();
             ResumeLayout(false);
@@ -146,5 +178,9 @@ namespace FAMApp
 
         private ToolStripMenuItem geomagnetAPIToolStripMenuItem;
         private ToolStripMenuItem geomagneticStormsToolStripMenuItem;
+        private ToolStripMenuItem temperatureToolStripMenuItem;
+        private ToolStripMenuItem humidityToolStripMenuItem;
+        private ToolStripMenuItem sWIRRLElectricFieldToolStripMenuItem;
+        private ToolStripButton Settings_Button;
     }
 }

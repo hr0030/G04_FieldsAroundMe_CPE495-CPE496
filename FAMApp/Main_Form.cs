@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,22 +15,27 @@ using System.Data;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Reflection.Emit;
 using ScottPlot.Plottables;
+using static ScottPlot.Generate;
+using DateTime = System.DateTime;
+using System.Threading.Channels;
 
 namespace FAMApp
 {
-    public partial class Form1 : Form
+    public partial class Main_Form : Form
     {
+
         private IMqttClient _client;
         private MqttClientOptions _options;
-        private List<DateTime> _dates;
-        private List<double> _voltages;
+        // Declare voltagesByChannel as a dictionary to store voltage data for each channel
+        private Dictionary<int, List<double>> voltagesByChannel = new Dictionary<int, List<double>>();
+        private Dictionary<int, List<DateTime>> _Dates = new Dictionary<int, List<DateTime>>();
         // At the class level
-        private List<DateTime> dates_GSC = new List<DateTime>();
-        private List<double> powers_GSC = new List<double>();
-        private FormsPlot formsPlot;
-        private FormsPlot newAPIPlot;
+        private List<DateTime> API_Dates = new List<DateTime>();
+        private List<double> API_Magnitude = new List<double>();
+        private FormsPlot Main_Plot;
+        private FormsPlot API_Plot;
 
-        public Form1()
+        public Main_Form()
         {
             InitializeComponent();
             InitializeChart();
@@ -38,35 +44,35 @@ namespace FAMApp
 
         private void InitializeChart()
         {
-            formsPlot = new FormsPlot
+            Main_Plot = new FormsPlot
             {
                 Dock = DockStyle.Fill
             };
-            this.Controls.Add(formsPlot);
+            this.Controls.Add(Main_Plot);
 
             // Customize the X and Y axes
-            formsPlot.Plot.Axes.DateTimeTicksBottom();
-            formsPlot.Plot.Axes.Bottom.Label.Text = "Date and Time";
-            formsPlot.Plot.Axes.Left.Label.Text = "Voltage (mV)";
+            Main_Plot.Plot.Axes.DateTimeTicksBottom();
+            Main_Plot.Plot.Axes.Bottom.Label.Text = "Date and Time";
+            Main_Plot.Plot.Axes.Left.Label.Text = "Voltage (mV)";
         }
 
         private void InitializeNewAPIPlot()
         {
-            newAPIPlot = new FormsPlot
+            API_Plot = new FormsPlot
             {
                 Dock = DockStyle.Fill
             };
-            this.Controls.Add(newAPIPlot);
+            this.Controls.Add(API_Plot);
 
             // Customize the X and Y axes
-            newAPIPlot.Plot.Axes.DateTimeTicksBottom();
-            newAPIPlot.Plot.Axes.Bottom.Label.Text = "Date and Time";
-            newAPIPlot.Plot.Axes.Left.Label.Text = "Voltage (mV)";
+            API_Plot.Plot.Axes.DateTimeTicksBottom();
+            API_Plot.Plot.Axes.Bottom.Label.Text = "Date and Time";
+            API_Plot.Plot.Axes.Left.Label.Text = "Voltage (mV)";
         }
 
         private void sourceButton1_Click(object sender, EventArgs e)
         {
-           
+
         }
 
         private void cloudToolStripMenuItem_Click(object sender, EventArgs e)
@@ -80,7 +86,7 @@ namespace FAMApp
             if (!string.IsNullOrEmpty(ipAddress))
             {
                 spawnAPIPopup();
-                MqttReceiver(ipAddress, "api/data",  "fetch_donki");
+                MqttReceiver(ipAddress, "api/data", "fetch_donki");
                 _ = StartAsync();
             }
         }
@@ -91,20 +97,20 @@ namespace FAMApp
             Form popOutForm = new Form
             {
                 Text = "New Plot Window",
-                Size = new Size(500, 400) 
+                Size = new Size(500, 400)
             };
 
-            popOutForm.Controls.Add(newAPIPlot);
-            newAPIPlot.Plot.Axes.DateTimeTicksBottom();
-            newAPIPlot.Plot.Axes.Bottom.Label.Text = "Date and Time";
-            newAPIPlot.Plot.Axes.Left.Label.Text = "Power";
-            newAPIPlot.Refresh();
+            popOutForm.Controls.Add(API_Plot);
+            API_Plot.Plot.Axes.DateTimeTicksBottom();
+            API_Plot.Plot.Axes.Bottom.Label.Text = "Date and Time";
+            API_Plot.Plot.Axes.Left.Label.Text = "Power";
+            API_Plot.Refresh();
 
             // Show the pop-out window
             popOutForm.Show();
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private void Main_Form_Load(object sender, EventArgs e)
         {
 
         }
@@ -114,7 +120,7 @@ namespace FAMApp
             string ipAddress = PromptForIPAddress();
             if (!string.IsNullOrEmpty(ipAddress))
             {
-                MqttReceiver(ipAddress, "sensor/data",  "live");
+                MqttReceiver(ipAddress, "sensor/data", "live");
                 _ = StartAsync();
             }
         }
@@ -136,8 +142,14 @@ namespace FAMApp
 
         private void LoadDataFromCsv(string filePath)
         {
-            var dates = new List<DateTime>();
-            var voltages = new List<double>();
+            // Dictionary to hold separate lists for each channel (1-4)
+            var voltagesByChannel = new Dictionary<int, List<double>>
+{
+    { 1, new List<double>() },
+    { 2, new List<double>() },
+    { 3, new List<double>() },
+    { 4, new List<double>() }
+};
 
             try
             {
@@ -150,23 +162,37 @@ namespace FAMApp
                         var line = reader.ReadLine();
                         var columns = line.Split(',');
 
-                        if (DateTime.TryParse(columns[0], out DateTime dateTime) &&
-                            double.TryParse(columns[1], out double millivolts))
+                        if (columns.Length >= 3 &&
+                            DateTime.TryParse(columns[0], out DateTime dateTime) &&
+                            int.TryParse(columns[1], out int channel) &&
+                            double.TryParse(columns[2], out double millivolts) &&
+                            channel >= 1 && channel <= 4) // Ensure valid channel range
                         {
-                            dates.Add(dateTime);
-                            voltages.Add(millivolts);
+                            // Ensure the channel exists in _Dates
+                            if (!_Dates.ContainsKey(channel))
+                            {
+                                _Dates[channel] = new List<DateTime>();
+                            }
+
+                            _Dates[channel].Add(dateTime);
+                            voltagesByChannel[channel].Add(millivolts);
                         }
                     }
                 }
 
-                // Call the plotting function with the extracted data
-                PlotData(dates, voltages, "Voltage(mV)");
+                // Call the plotting function for each channel
+                Main_Plot.Invoke((MethodInvoker)(() =>
+                {
+                    PlotData(voltagesByChannel, _Dates);
+                }));
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error reading CSV data: {ex.Message}");
             }
         }
+
+
 
         private string PromptForIPAddress()
         {
@@ -193,8 +219,6 @@ namespace FAMApp
 
         private void MqttReceiver(string ipAddress, string subscriberTopic, string commandPayload)
         {
-            _dates = new List<DateTime>();
-            _voltages = new List<double>();
 
             var factory = new MqttFactory();
             _client = factory.CreateMqttClient();
@@ -254,23 +278,41 @@ namespace FAMApp
 
         private void ParseAndGraphLiveData(string payload)
         {
-            // Parse the payload (expected format: "timestamp,data")
+            // Parse the payload (expected format: "timestamp,channel,data")
             var parts = payload.Split(',');
-            if (parts.Length == 2 &&
+
+            double voltage = 0; //Initialization to Avoid Errors
+            int channel = 0;
+
+            if (parts.Length == 3 &&
                 DateTime.TryParse(parts[0], out DateTime timestamp) &&
-                double.TryParse(parts[1], out double voltage))
+                int.TryParse(parts[1], out channel) &&
+                double.TryParse(parts[2], out voltage) &&
+                channel >= 1 && channel <= 4) // Ensure channel is within range
             {
-                _dates.Add(timestamp);
-                _voltages.Add(voltage);
+                // Ensure the channel exists in the dictionaries
+                if (!voltagesByChannel.ContainsKey(channel))
+                {
+                    voltagesByChannel[channel] = new List<double>();
+                }
+                if (!_Dates.ContainsKey(channel))
+                {
+                    _Dates[channel] = new List<DateTime>();
+                }
+
+                // Add timestamp to the respective channel without checking for duplicates
+                _Dates[channel].Add(timestamp);
+
+                // Add voltage data to the corresponding channel list
+                voltagesByChannel[channel].Add(voltage);
 
                 // Invoke PlotData on the main thread
-                formsPlot.Invoke((MethodInvoker)(() =>
+                Main_Plot.Invoke((MethodInvoker)(() =>
                 {
-                    PlotData(_dates, _voltages, "Voltage(mV)");
+                    PlotData(voltagesByChannel, _Dates);
                 }));
             }
         }
-
 
         private void ParseDonki(string payload)
         {
@@ -313,22 +355,22 @@ namespace FAMApp
             double averageValue = numericValues.Average();
 
             // Add timestamp and average value to the global lists
-            dates_GSC.Add(timestamp);
-            powers_GSC.Add(averageValue);
+            API_Dates.Add(timestamp);
+            API_Magnitude.Add(averageValue);
 
             // Update the plot
-            if (newAPIPlot != null)
+            if (API_Plot != null)
             {
-                if (newAPIPlot.InvokeRequired)
+                if (API_Plot.InvokeRequired)
                 {
-                    newAPIPlot.Invoke((MethodInvoker)(() =>
+                    API_Plot.Invoke((MethodInvoker)(() =>
                     {
-                        PlotLollipopData(dates_GSC, powers_GSC, "KP");
+                        PlotLollipopData(API_Dates, API_Magnitude, "KP");
                     }));
                 }
                 else
                 {
-                    PlotLollipopData(dates_GSC, powers_GSC, "KP");
+                    PlotLollipopData(API_Dates, API_Magnitude, "KP");
                 }
             }
             else
@@ -359,27 +401,42 @@ namespace FAMApp
             await _client.DisconnectAsync();
         }
 
-        private void PlotData(List<DateTime> timestamps, List<double> data, string label)
+        private void PlotData(Dictionary<int, List<double>> voltagesByChannel, Dictionary<int, List<DateTime>> timestamps)
         {
             try
             {
-                double[] xs = timestamps.ConvertAll(date => date.ToOADate()).ToArray();
-                double[] ys = data.ToArray();
+                Main_Plot.Plot.Clear(); // Clear previous plots
 
-                formsPlot.Plot.Clear();
-                var linePlot = formsPlot.Plot.Add.Scatter(xs, ys);
-                linePlot.Label = label;
-                linePlot.LineWidth = 2;
-                linePlot.MarkerSize = 1;
+                IPalette palette = new ScottPlot.Palettes.Category10();
 
-                formsPlot.Plot.Axes.AutoScale();
-                formsPlot.Refresh();
+                int colorIndex = 0;
+                foreach (var channel in voltagesByChannel.Keys)
+                {
+                    if (voltagesByChannel[channel].Count == 0 || !timestamps.ContainsKey(channel) || timestamps[channel].Count == 0)
+                        continue; // Skip empty channels or channels without timestamps
+
+                    double[] xs = timestamps[channel].Select(date => date.ToOADate()).ToArray(); // Get timestamps for the current channel
+                    double[] ys = voltagesByChannel[channel].ToArray(); // Get voltages for the current channel
+
+                    var linePlot = Main_Plot.Plot.Add.Scatter(xs, ys);
+
+                    linePlot.Label = $"Channel {channel}";
+                    linePlot.LineWidth = 2;
+                    linePlot.MarkerSize = 1;
+                    linePlot.Color = palette.GetColor(colorIndex++); // Get a unique color
+                }
+
+                Main_Plot.Plot.Legend.IsVisible = true; // Show legend to differentiate channels
+                Main_Plot.Plot.Axes.AutoScale(); // Auto-scale for better visibility
+                Main_Plot.Refresh();
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error plotting data: {ex.Message}");
             }
         }
+
+
 
         private void PlotLollipopData(List<DateTime> timestamps, List<double> data, string label)
         {
@@ -402,26 +459,26 @@ namespace FAMApp
                 }
 
                 Debug.WriteLine($"Plotting lollipop graph with {xs.Length} points.");
-                newAPIPlot.Plot.Clear();
+                API_Plot.Plot.Clear();
 
                 // Add lollipop sticks
                 for (int i = 0; i < xs.Length; i++)
                 {
-                    var stick = newAPIPlot.Plot.Add.Scatter(
+                    var stick = API_Plot.Plot.Add.Scatter(
                         xs: new double[] { xs[i], xs[i] },
                         ys: new double[] { 0, ys[i] }
                     );
                     stick.LineWidth = 1; // Set line width
                 }
 
-                var scatterPlot = newAPIPlot.Plot.Add.Scatter(xs, ys);
+                var scatterPlot = API_Plot.Plot.Add.Scatter(xs, ys);
                 scatterPlot.Label = label;
-                scatterPlot.MarkerSize = 10; 
-                scatterPlot.LineStyle = ScottPlot.LineStyle.None; 
+                scatterPlot.MarkerSize = 10;
+                scatterPlot.LineStyle = ScottPlot.LineStyle.None;
 
                 // Auto-scale the plot and refresh
-                newAPIPlot.Plot.Axes.AutoScale();
-                newAPIPlot.Refresh();
+                API_Plot.Plot.Axes.AutoScale();
+                API_Plot.Refresh();
 
                 Debug.WriteLine("Lollipop graph refreshed.");
             }
@@ -429,6 +486,18 @@ namespace FAMApp
             {
                 MessageBox.Show($"Error plotting lollipop data: {ex.Message}");
             }
+        }
+
+        private void Settings_Button_Click(object sender, EventArgs e)
+        {
+            // Create an instance of the Settings_Form
+            Settings_Form settingsForm = new Settings_Form();
+
+            // Show the form as a modal dialog (blocks the main form until the settings form is closed)
+            settingsForm.ShowDialog();
+
+            // If you want to show the form non-modally (allows interaction with both forms):
+            // settingsForm.Show();
         }
     }
 }
