@@ -76,10 +76,6 @@ namespace FAMApp
             API_Plot.Plot.Axes.Left.Label.Text = "Voltage (mV)";
         }
 
-        private void sourceButton1_Click(object sender, EventArgs e)
-        {
-
-        }
 
         private void cloudToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -88,12 +84,60 @@ namespace FAMApp
 
         private void geomagneticStormsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            getAPIGeneral("Power", "api/data", "fetch_donki");
+            getAPIGeneral("Power", "api/data", "fetch_donki_gst");
+        }
+
+        private void Temperature_API_Click(object sender, EventArgs e)
+        {
+            getAPIGeneral("Temperature(C)", "api/data", "fetch_temperature_api");
+        }
+
+        private void Humidity_API_Click(object sender, EventArgs e)
+        {
+            getAPIGeneral("Percent", "api/data", "fetch_humidity_api");
+        }
+        private void SWIRRL_API_Click(object sender, EventArgs e)
+        {
+            getAPIGeneral("Voltage", "api/data", "fetch_uah_swirll_api");
+        }
+
+        private void Tree_Rhythms_API_Click(object sender, EventArgs e)
+        {
+            getAPIGeneral("Voltage", "api/data", "fetch_tree_rhythms");
+        }
+
+        private void Solar_Index_Click(object sender, EventArgs e)
+        {
+            getAPIGeneral("W/m^2", "api/data", "fetch_solar_index");
+        }
+
+        private void Pressure_API_Click(object sender, EventArgs e)
+        {
+            getAPIGeneral("mb", "api/data", "fetch_pressure_api");
+        }
+
+        private void Sunrise_Time_Click(object sender, EventArgs e)
+        {
+            getAPIGeneral("Time", "api/data", "fetch_sunrise_time");
+        }
+
+        private void Sunset_Time_Click(object sender, EventArgs e)
+        {
+            getAPIGeneral("Time", "api/data", "fetch_sunset_time");
         }
 
 
+        private Control originalParent; // Store the original parent container
+
         private void spawnAPIPopup(string yAxisLabel)
         {
+            // Check if API_Plot already has a parent
+            if (API_Plot.Parent != null)
+            {
+                originalParent = API_Plot.Parent; // Store the original parent
+                originalParent.Controls.Remove(API_Plot); // Remove it from the parent
+            }
+
             // Create a new Form for the pop-out window
             Form popOutForm = new Form
             {
@@ -101,15 +145,35 @@ namespace FAMApp
                 Size = new Size(500, 400)
             };
 
+            // Clear the plot before displaying the new form
+            API_Plot.Plot.Clear();
+            API_Plot.Refresh();
+
+            // Add API_Plot to the new form
             popOutForm.Controls.Add(API_Plot);
+            API_Plot.Dock = DockStyle.Fill;
+
+            // Configure plot labels
             API_Plot.Plot.Axes.DateTimeTicksBottom();
             API_Plot.Plot.Axes.Bottom.Label.Text = "Date and Time";
             API_Plot.Plot.Axes.Left.Label.Text = yAxisLabel;
             API_Plot.Refresh();
 
+            // Handle the form closing event to restore API_Plot
+            popOutForm.FormClosing += (s, e) =>
+            {
+                if (originalParent != null)
+                {
+                    originalParent.Controls.Add(API_Plot);
+                    API_Plot.Dock = DockStyle.Fill; // Restore layout
+                    API_Plot.Refresh();
+                }
+            };
+
             // Show the pop-out window
             popOutForm.Show();
         }
+
 
         private void getAPIGeneral(string yAxisLabel, string subscriberTopic, string commandPayload)
         {
@@ -122,12 +186,20 @@ namespace FAMApp
             // Check if the IP address is not empty or null
             if (!string.IsNullOrEmpty(ipAddress))
             {
-                // Call the popup and MQTT receiver with the IP address
-                spawnAPIPopup(yAxisLabel);
-                MqttReceiver(ipAddress, subscriberTopic, commandPayload);
+                string selectedDate = ShowDoubleDatePickerDialog();
+                if (selectedDate != null)
+                {
+                    // Call the popup and MQTT receiver with the IP address
+                    spawnAPIPopup(yAxisLabel);
+                    MqttReceiver(ipAddress, subscriberTopic, commandPayload);
 
-                // Start the asynchronous process
-                _ = StartAsync();
+                    // Start the asynchronous process
+                    _ = StartAsync();
+                }
+                else
+                {
+                    MessageBox.Show("Error: Problem with Selected Date", "Date Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
             else
             {
@@ -226,31 +298,6 @@ namespace FAMApp
             }
         }
 
-
-
-        private string PromptForIPAddress()
-        {
-            using (Form inputForm = new Form())
-            {
-                inputForm.Width = 300;
-                inputForm.Height = 150;
-                inputForm.Text = "Enter IP Address";
-
-                System.Windows.Forms.Label label = new System.Windows.Forms.Label() { Left = 10, Top = 20, Text = "IP Address:" };
-                TextBox textBox = new TextBox() { Left = 100, Top = 20, Width = 150 };
-                Button confirmation = new Button() { Text = "OK", Left = 100, Width = 100, Top = 60, DialogResult = DialogResult.OK };
-                inputForm.Controls.Add(label);
-                inputForm.Controls.Add(textBox);
-                inputForm.Controls.Add(confirmation);
-                inputForm.AcceptButton = confirmation;
-                if (inputForm.ShowDialog() == DialogResult.OK)
-                {
-                    return textBox.Text;
-                }
-            }
-            return null;
-        }
-
         private void MqttReceiver(string ipAddress, string subscriberTopic, string commandPayload)
         {
 
@@ -274,7 +321,10 @@ namespace FAMApp
 
                 await _client.PublishAsync(message);
                 Debug.WriteLine("Published '{commandPayload}' to 'desktop/commands'.");
+                if (subscriberTopic == "Upload")
+                {
 
+                }
                 // Subscribe to the subscriberTopic topic
                 await _client.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic(subscriberTopic).Build());
                 Debug.WriteLine("Subscribed to topic '{subscriberTopic}'.");
@@ -296,9 +346,42 @@ namespace FAMApp
                         ParseAndGraphLiveData(payload);
                         break;
 
-                    case "fetch_donki":
-                        ParseDonki(payload);
+                    case "fetch_donki_gst":
+                        ParseAPILollipop(payload);
                         break;
+
+                    case "fetch_temperature_api":
+                        ParseAPILine(payload);
+                        break;
+
+                    case "fetch_humidity_api":
+                        ParseAPILine(payload);
+                        break;
+
+                    case "fetch_uah_swirll_api":
+                        ParseAPILine(payload);
+                        break;
+
+                    case "fetch_tree_rhythms":
+                        ParseAPILine(payload);
+                        break;
+
+                    case "fetch_solar_index":
+                        ParseAPILine(payload);
+                        break;
+
+                    case "fetch_pressure_api":
+                        ParseAPILine(payload);
+                        break;
+
+                    case "fetch_sunrise_time":
+                        ParseAPILine(payload);
+                        break;
+
+                    case "fetch_sunset_time":
+                        ParseAPILine(payload);
+                        break;
+
 
                     default:
                         Debug.WriteLine($"Unrecognized Command: {commandPayload}");
@@ -307,7 +390,61 @@ namespace FAMApp
             };
         }
 
+        private async Task MqttSendFile(string ipAddress, string commandPayload, string filePath)
+        {
+            var factory = new MqttFactory();
+            var client = factory.CreateMqttClient();
 
+            var options = new MqttClientOptionsBuilder()
+                .WithClientId("CSHarpClient")
+                .WithTcpServer(ipAddress)
+                .Build();
+
+            await client.ConnectAsync(options);
+            Debug.WriteLine("Connected to MQTT broker.");
+
+            // Send the command payload first
+            var commandMessage = new MqttApplicationMessageBuilder()
+                .WithTopic("desktop/commands")
+                .WithPayload(commandPayload)
+                .Build();
+
+            await client.PublishAsync(commandMessage);
+            Debug.WriteLine($"Published command '{commandPayload}' to 'desktop/commands'.");
+
+            // Read file and send line by line
+            if (File.Exists(filePath))
+            {
+                foreach (var line in File.ReadLines(filePath))
+                {
+                    var lineMessage = new MqttApplicationMessageBuilder()
+                        .WithTopic("desktop/commands")
+                        .WithPayload(line)
+                        .Build();
+
+                    await client.PublishAsync(lineMessage);
+                    Debug.WriteLine($"Published line: {line}");
+                    //await Task.Delay(100); // Optional delay to prevent flooding
+                }
+            }
+            else
+            {
+                Debug.WriteLine("File not found: " + filePath);
+                return;
+            }
+
+            // Send EOF to indicate the end of the file
+            var eofMessage = new MqttApplicationMessageBuilder()
+                .WithTopic("desktop/commands")
+                .WithPayload("EOF")
+                .Build();
+
+            await client.PublishAsync(eofMessage);
+            Debug.WriteLine("Published EOF to indicate end of file.");
+
+            await client.DisconnectAsync();
+            Debug.WriteLine("Disconnected from MQTT broker.");
+        }
 
 
         private void ParseAndGraphLiveData(string payload)
@@ -348,7 +485,7 @@ namespace FAMApp
             }
         }
 
-        private void ParseDonki(string payload)
+        private void ParseAPILollipop(string payload)
         {
             if (string.IsNullOrWhiteSpace(payload))
             {
@@ -358,39 +495,32 @@ namespace FAMApp
 
             var parts = payload.Split(',');
 
-            // Ensure there are at least 4 parts
-            if (parts.Length < 4)
+            // Ensure there are exactly 2 parts (timestamp and a single numerical value)
+            if (parts.Length != 2)
             {
-                Debug.WriteLine($"Invalid payload: {payload}");
+                Debug.WriteLine($"Invalid payload format: {payload}");
                 return;
             }
 
             // Extract the timestamp from the payload
-            string timestampStr = parts[1].Trim();
+            string timestampStr = parts[0].Trim();
             if (!DateTime.TryParse(timestampStr, out DateTime timestamp))
             {
                 Debug.WriteLine($"Failed to parse timestamp: {timestampStr}");
                 return;
             }
 
-            // Extract numerical data from the payload
-            var numericValues = parts.Skip(2)
-                                     .TakeWhile(p => double.TryParse(p.Trim(), out _))
-                                     .Select(p => double.Parse(p.Trim()))
-                                     .ToList();
-
-            if (numericValues.Count == 0)
+            // Extract the single numerical value
+            string numericStr = parts[1].Trim();
+            if (!double.TryParse(numericStr, out double numericValue))
             {
-                Debug.WriteLine($"No numerical data found in payload: {payload}");
+                Debug.WriteLine($"Failed to parse numerical value: {numericStr}");
                 return;
             }
 
-            // Calculate the average of the numerical values
-            double averageValue = numericValues.Average();
-
-            // Add timestamp and average value to the global lists
+            // Add timestamp and numerical value to the global lists
             API_Dates.Add(timestamp);
-            API_Magnitude.Add(averageValue);
+            API_Magnitude.Add(numericValue);
 
             // Update the plot
             if (API_Plot != null)
@@ -413,6 +543,63 @@ namespace FAMApp
             }
         }
 
+        private void ParseAPILine(string payload)
+        {
+            if (string.IsNullOrWhiteSpace(payload))
+            {
+                Debug.WriteLine("Payload is null or empty.");
+                return;
+            }
+
+            var parts = payload.Split(',');
+
+            // Ensure there are exactly 2 parts (timestamp and a single numerical value)
+            if (parts.Length != 2)
+            {
+                Debug.WriteLine($"Invalid payload format: {payload}");
+                return;
+            }
+
+            // Extract the timestamp from the payload
+            string timestampStr = parts[0].Trim();
+            if (!DateTime.TryParse(timestampStr, out DateTime timestamp))
+            {
+                Debug.WriteLine($"Failed to parse timestamp: {timestampStr}");
+                return;
+            }
+
+            // Extract the single numerical value
+            string numericStr = parts[1].Trim();
+            if (!double.TryParse(numericStr, out double numericValue))
+            {
+                Debug.WriteLine($"Failed to parse numerical value: {numericStr}");
+                return;
+            }
+
+            // Add timestamp and numerical value to the global lists
+            API_Dates.Add(timestamp);
+            API_Magnitude.Add(numericValue);
+
+            // Update the plot
+            if (API_Plot != null)
+            {
+                if (API_Plot.InvokeRequired)
+                {
+                    API_Plot.Invoke((MethodInvoker)(() =>
+                    {
+                        PlotLineAPIData(API_Dates, API_Magnitude, "KP");
+                    }));
+                }
+                else
+                {
+                    PlotLineAPIData(API_Dates, API_Magnitude, "KP");
+                }
+            }
+            else
+            {
+                Debug.WriteLine("newAPIPlot is null. Unable to update plot.");
+            }
+        }
 
 
 
@@ -471,7 +658,43 @@ namespace FAMApp
         }
 
 
+        private void PlotLineAPIData(List<DateTime> timestamps, List<double> data, string label)
+        {
+            try
+            {
+                if (timestamps == null || data == null || timestamps.Count == 0 || data.Count == 0)
+                {
+                    MessageBox.Show("No data to plot. Please ensure timestamps and data are populated.");
+                    return;
+                }
 
+                // Convert DateTime to OADate for plotting
+                double[] xs = timestamps.ConvertAll(date => date.ToOADate()).ToArray();
+                double[] ys = data.ToArray();
+
+                if (xs.Length != ys.Length)
+                {
+                    MessageBox.Show("Mismatch between timestamps and data lengths.");
+                    return;
+                }
+
+                Debug.WriteLine($"Plotting line graph with {xs.Length} points.");
+                API_Plot.Plot.Clear();
+                var linePlot = API_Plot.Plot.Add.Scatter(xs, ys);
+                linePlot.LineWidth = 2;
+                linePlot.MarkerSize = 1;
+
+                // Auto-scale the plot and refresh
+                API_Plot.Plot.Axes.AutoScale();
+                API_Plot.Refresh();
+
+                Debug.WriteLine("Linw graph refreshed.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error plotting line data: {ex.Message}");
+            }
+        }
         private void PlotLollipopData(List<DateTime> timestamps, List<double> data, string label)
         {
             try
@@ -526,12 +749,7 @@ namespace FAMApp
         {
             // Create an instance of the Settings_Form
             Settings_Form settingsForm = new Settings_Form();
-
-            // Show the form as a modal dialog (blocks the main form until the settings form is closed)
             settingsForm.ShowDialog();
-
-            // If you want to show the form non-modally (allows interaction with both forms):
-            // settingsForm.Show();
         }
 
         public static class SettingsLoader
@@ -565,6 +783,147 @@ namespace FAMApp
                 }
             }
         }
+
+        private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            genericUploadFunction("settings_upload");
+        }
+
+        private void treeRhythmsUpload_Click(object sender, EventArgs e)
+        {
+            genericUploadFunction("tree_rhythms_upload");
+        }
+
+        private void UAH_SWIRLL_Upload_Click(object sender, EventArgs e)
+        {
+            genericUploadFunction("uah_swirll_upload");
+        }
+
+
+        private string ShowSingleDatePickerDialog()
+        {
+            using (Form dateForm = new Form())
+            {
+                dateForm.Text = "Date Picker";
+                dateForm.Size = new Size(250, 200);
+                dateForm.StartPosition = FormStartPosition.CenterScreen;
+
+                DateTimePicker datePicker = new DateTimePicker
+                {
+                    Format = DateTimePickerFormat.Short,
+                    Location = new Point(30, 30),
+                    Width = 150
+                };
+
+                Button confirmButton = new Button
+                {
+                    Text = "OK",
+                    Location = new Point(75, 80),
+                    DialogResult = DialogResult.OK
+                };
+
+                dateForm.Controls.Add(datePicker);
+                dateForm.Controls.Add(confirmButton);
+                dateForm.AcceptButton = confirmButton;
+
+                if (dateForm.ShowDialog() == DialogResult.OK)
+                {
+                    return datePicker.Value.ToString("yyyy_MM_dd"); // Format: d_m_y
+                }
+            }
+            return null; // If the user cancels the selection
+        }
+
+        private string ShowDoubleDatePickerDialog()
+        {
+            using (Form dateForm = new Form())
+            {
+                dateForm.Text = "Date Picker";
+                dateForm.Size = new Size(250, 200);
+                dateForm.StartPosition = FormStartPosition.CenterScreen;
+
+                DateTimePicker startDatePicker = new DateTimePicker
+                {
+                    Format = DateTimePickerFormat.Short,
+                    Location = new Point(30, 30),
+                    Width = 150
+                };
+
+                DateTimePicker endDatePicker = new DateTimePicker
+                {
+                    Format = DateTimePickerFormat.Short,
+                    Location = new Point(30, 60),
+                    Width = 150
+                };
+
+                Button confirmButton = new Button
+                {
+                    Text = "OK",
+                    Location = new Point(75, 110),
+                    DialogResult = DialogResult.OK
+                };
+
+                dateForm.Controls.Add(startDatePicker);
+                dateForm.Controls.Add(endDatePicker);
+                dateForm.Controls.Add(confirmButton);
+                dateForm.AcceptButton = confirmButton;
+
+                if (dateForm.ShowDialog() == DialogResult.OK)
+                {
+                    if (startDatePicker.Value > endDatePicker.Value)
+                    {
+                        MessageBox.Show("Error: End Date is Before Start Date", "Date Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return null;
+                    }
+                    string return_date_string = startDatePicker.Value.ToString("yyyy_MM_dd") + "," + endDatePicker.Value.ToString("yyyy_MM_dd");
+                    return return_date_string; // Format: d_m_y
+                }
+            }
+            return null; // If the user cancels the selection
+        }
+
+        private void genericUploadFunction(string commandPayload)
+        {
+            // Load the settings (if not already loaded)
+            SettingsLoader.LoadSettings();
+
+            // Get the IP address from the global variable
+            string ipAddress = GlobalSettings.ServerIP;
+
+            // Check if the IP address is not empty or null
+            if (!string.IsNullOrEmpty(ipAddress))
+            {
+                // Show date picker dialog and get the selected date
+                string selectedDate = ShowSingleDatePickerDialog();
+                if (string.IsNullOrEmpty(selectedDate))
+                {
+                    MessageBox.Show("No date selected. Operation canceled.");
+                    return; // Exit function if no date is selected
+                }
+
+                using (OpenFileDialog openFileDialog = new OpenFileDialog())
+                {
+                    openFileDialog.Filter = "All files (*.*)|*.*";
+                    openFileDialog.Title = "Select a file";
+
+                    if (openFileDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        string filePath = openFileDialog.FileName;
+
+                        // Modify the command payload to include the selected date
+                        string updatedCommandPayload = $"{commandPayload},{selectedDate}";
+
+                        MqttSendFile(ipAddress, updatedCommandPayload, filePath);
+                    }
+                }
+            }
+            else
+            {
+                // Handle the case where the IP address is not set
+                MessageBox.Show("IP Address is not configured.");
+            }
+        }
+
 
     }
 }

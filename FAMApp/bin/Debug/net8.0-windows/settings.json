@@ -1,3 +1,21 @@
 {
-  "ServerIP": "10.10.27.143"
+  "ServerIP": "192.168.1.1",
+  "SamplingFrequency": "100",
+  "Sensors": [
+    {
+      "Name": "Oak_Tree",
+      "Longitude": "72",
+      "Latitude": "56"
+    },
+    {
+      "Name": "Oak_Tree_Sensor",
+      "Longitude": "-42",
+      "Latitude": "35"
+    },
+    {
+      "Name": "Cherry_Tree_Sensor",
+      "Longitude": "69",
+      "Latitude": "69"
+    }
+  ]
 }

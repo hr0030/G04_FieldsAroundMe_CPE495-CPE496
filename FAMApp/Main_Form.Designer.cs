@@ -46,14 +46,23 @@ namespace FAMApp
             temperatureToolStripMenuItem = new ToolStripMenuItem();
             humidityToolStripMenuItem = new ToolStripMenuItem();
             sWIRRLElectricFieldToolStripMenuItem = new ToolStripMenuItem();
+            treeRhythmsToolStripMenuItem = new ToolStripMenuItem();
             Settings_Button = new ToolStripButton();
+            toolStripDropDownUpload = new ToolStripDropDownButton();
+            settingsToolStripMenuItem = new ToolStripMenuItem();
+            treeRhythmsToolStripMenuItem1 = new ToolStripMenuItem();
+            solarIndexToolStripMenuItem = new ToolStripMenuItem();
+            pressureToolStripMenuItem = new ToolStripMenuItem();
+            sunriseTimeToolStripMenuItem = new ToolStripMenuItem();
+            sunsetTimeToolStripMenuItem = new ToolStripMenuItem();
+            uAHSWIRLLToolStripMenuItem = new ToolStripMenuItem();
             toolStrip1.SuspendLayout();
             SuspendLayout();
             // 
             // toolStrip1
             // 
             toolStrip1.ImageScalingSize = new Size(20, 20);
-            toolStrip1.Items.AddRange(new ToolStripItem[] { sourceButton1, Settings_Button });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { sourceButton1, Settings_Button, toolStripDropDownUpload });
             toolStrip1.Location = new Point(0, 0);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(800, 25);
@@ -69,7 +78,6 @@ namespace FAMApp
             sourceButton1.Name = "sourceButton1";
             sourceButton1.Size = new Size(56, 22);
             sourceButton1.Text = "Source";
-            sourceButton1.Click += sourceButton1_Click;
             // 
             // wifiToolStripMenuItem
             // 
@@ -94,7 +102,7 @@ namespace FAMApp
             // 
             // geomagnetAPIToolStripMenuItem
             // 
-            geomagnetAPIToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { geomagneticStormsToolStripMenuItem, temperatureToolStripMenuItem, humidityToolStripMenuItem, sWIRRLElectricFieldToolStripMenuItem });
+            geomagnetAPIToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { geomagneticStormsToolStripMenuItem, temperatureToolStripMenuItem, humidityToolStripMenuItem, sWIRRLElectricFieldToolStripMenuItem, treeRhythmsToolStripMenuItem, solarIndexToolStripMenuItem, pressureToolStripMenuItem, sunriseTimeToolStripMenuItem, sunsetTimeToolStripMenuItem });
             geomagnetAPIToolStripMenuItem.Name = "geomagnetAPIToolStripMenuItem";
             geomagnetAPIToolStripMenuItem.Size = new Size(180, 22);
             geomagnetAPIToolStripMenuItem.Text = "APIs";
@@ -111,18 +119,28 @@ namespace FAMApp
             temperatureToolStripMenuItem.Name = "temperatureToolStripMenuItem";
             temperatureToolStripMenuItem.Size = new Size(185, 22);
             temperatureToolStripMenuItem.Text = "Temperature";
+            temperatureToolStripMenuItem.Click += Temperature_API_Click;
             // 
             // humidityToolStripMenuItem
             // 
             humidityToolStripMenuItem.Name = "humidityToolStripMenuItem";
             humidityToolStripMenuItem.Size = new Size(185, 22);
             humidityToolStripMenuItem.Text = "Humidity";
+            humidityToolStripMenuItem.Click += Humidity_API_Click;
             // 
             // sWIRRLElectricFieldToolStripMenuItem
             // 
             sWIRRLElectricFieldToolStripMenuItem.Name = "sWIRRLElectricFieldToolStripMenuItem";
             sWIRRLElectricFieldToolStripMenuItem.Size = new Size(185, 22);
             sWIRRLElectricFieldToolStripMenuItem.Text = "SWIRRL Electric Field";
+            sWIRRLElectricFieldToolStripMenuItem.Click += SWIRRL_API_Click;
+            // 
+            // treeRhythmsToolStripMenuItem
+            // 
+            treeRhythmsToolStripMenuItem.Name = "treeRhythmsToolStripMenuItem";
+            treeRhythmsToolStripMenuItem.Size = new Size(185, 22);
+            treeRhythmsToolStripMenuItem.Text = "Tree Rhythms";
+            treeRhythmsToolStripMenuItem.Click += Tree_Rhythms_API_Click;
             // 
             // Settings_Button
             // 
@@ -133,6 +151,65 @@ namespace FAMApp
             Settings_Button.Size = new Size(53, 22);
             Settings_Button.Text = "Settings";
             Settings_Button.Click += Settings_Button_Click;
+            // 
+            // toolStripDropDownUpload
+            // 
+            toolStripDropDownUpload.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            toolStripDropDownUpload.DropDownItems.AddRange(new ToolStripItem[] { settingsToolStripMenuItem, treeRhythmsToolStripMenuItem1, uAHSWIRLLToolStripMenuItem });
+            toolStripDropDownUpload.Image = (Image)resources.GetObject("toolStripDropDownUpload.Image");
+            toolStripDropDownUpload.ImageTransparentColor = Color.Magenta;
+            toolStripDropDownUpload.Name = "toolStripDropDownUpload";
+            toolStripDropDownUpload.Size = new Size(58, 22);
+            toolStripDropDownUpload.Text = "Upload";
+            // 
+            // settingsToolStripMenuItem
+            // 
+            settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
+            settingsToolStripMenuItem.Size = new Size(180, 22);
+            settingsToolStripMenuItem.Text = "Settings";
+            settingsToolStripMenuItem.Click += settingsToolStripMenuItem_Click;
+            // 
+            // treeRhythmsToolStripMenuItem1
+            // 
+            treeRhythmsToolStripMenuItem1.Name = "treeRhythmsToolStripMenuItem1";
+            treeRhythmsToolStripMenuItem1.Size = new Size(180, 22);
+            treeRhythmsToolStripMenuItem1.Text = "Tree Rhythms";
+            treeRhythmsToolStripMenuItem1.Click += treeRhythmsUpload_Click;
+            // 
+            // solarIndexToolStripMenuItem
+            // 
+            solarIndexToolStripMenuItem.Name = "solarIndexToolStripMenuItem";
+            solarIndexToolStripMenuItem.Size = new Size(185, 22);
+            solarIndexToolStripMenuItem.Text = "Solar Index";
+            solarIndexToolStripMenuItem.Click += Solar_Index_Click;
+            // 
+            // pressureToolStripMenuItem
+            // 
+            pressureToolStripMenuItem.Name = "pressureToolStripMenuItem";
+            pressureToolStripMenuItem.Size = new Size(185, 22);
+            pressureToolStripMenuItem.Text = "Pressure";
+            pressureToolStripMenuItem.Click += Pressure_API_Click;
+            // 
+            // sunriseTimeToolStripMenuItem
+            // 
+            sunriseTimeToolStripMenuItem.Name = "sunriseTimeToolStripMenuItem";
+            sunriseTimeToolStripMenuItem.Size = new Size(185, 22);
+            sunriseTimeToolStripMenuItem.Text = "Sunrise Time";
+            sunriseTimeToolStripMenuItem.Click += Sunrise_Time_Click;
+            // 
+            // sunsetTimeToolStripMenuItem
+            // 
+            sunsetTimeToolStripMenuItem.Name = "sunsetTimeToolStripMenuItem";
+            sunsetTimeToolStripMenuItem.Size = new Size(185, 22);
+            sunsetTimeToolStripMenuItem.Text = "Sunset Time";
+            sunsetTimeToolStripMenuItem.Click += Sunset_Time_Click;
+            // 
+            // uAHSWIRLLToolStripMenuItem
+            // 
+            uAHSWIRLLToolStripMenuItem.Name = "uAHSWIRLLToolStripMenuItem";
+            uAHSWIRLLToolStripMenuItem.Size = new Size(180, 22);
+            uAHSWIRLLToolStripMenuItem.Text = "UAH SWIRLL";
+            uAHSWIRLLToolStripMenuItem.Click += UAH_SWIRLL_Upload_Click;
             // 
             // Main_Form
             // 
@@ -182,5 +259,14 @@ namespace FAMApp
         private ToolStripMenuItem humidityToolStripMenuItem;
         private ToolStripMenuItem sWIRRLElectricFieldToolStripMenuItem;
         private ToolStripButton Settings_Button;
+        private ToolStripMenuItem treeRhythmsToolStripMenuItem;
+        private ToolStripDropDownButton toolStripDropDownUpload;
+        private ToolStripMenuItem settingsToolStripMenuItem;
+        private ToolStripMenuItem treeRhythmsToolStripMenuItem1;
+        private ToolStripMenuItem solarIndexToolStripMenuItem;
+        private ToolStripMenuItem pressureToolStripMenuItem;
+        private ToolStripMenuItem sunriseTimeToolStripMenuItem;
+        private ToolStripMenuItem sunsetTimeToolStripMenuItem;
+        private ToolStripMenuItem uAHSWIRLLToolStripMenuItem;
     }
 }
