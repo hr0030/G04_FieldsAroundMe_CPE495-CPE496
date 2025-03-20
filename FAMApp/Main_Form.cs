@@ -126,6 +126,11 @@ namespace FAMApp
             getAPIGeneral("Time", "api/data", "fetch_sunset_time");
         }
 
+        private void Samsung_Watch_API_Click(object sender, EventArgs e)
+        {
+            getAPIGeneral("BPM", "api/data", "fetch_samsung_watch");
+        }
+
 
         private Control originalParent; // Store the original parent container
 
@@ -179,6 +184,11 @@ namespace FAMApp
         {
             // Load the settings (if not already loaded)
             SettingsLoader.LoadSettings();
+
+            // Clear Data From Plot
+            API_Plot.Plot.Clear();
+            API_Dates.Clear();
+            API_Magnitude.Clear();
 
             // Get the IP address from the global variable
             string ipAddress = GlobalSettings.ServerIP;
@@ -340,53 +350,19 @@ namespace FAMApp
             {
                 string payload = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
                 Debug.WriteLine("Message received event triggered");
-                switch (commandPayload)
-                {
-                    case "live":
-                        ParseAndGraphLiveData(payload);
-                        break;
 
-                    case "fetch_donki_gst":
-                        ParseAPILollipop(payload);
-                        break;
+                if (commandPayload.Contains("live"))
+                    ParseAndGraphLiveData(payload);
 
-                    case "fetch_temperature_api":
-                        ParseAPILine(payload);
-                        break;
+                else if (commandPayload.Contains("fetch_donki_gst"))
+                    ParseAPILollipop(payload);
 
-                    case "fetch_humidity_api":
-                        ParseAPILine(payload);
-                        break;
+                else if (commandPayload.Contains("fetch"))
+                    ParseAPILine(payload);
 
-                    case "fetch_uah_swirll_api":
-                        ParseAPILine(payload);
-                        break;
+                else
+                    Debug.WriteLine($"Unrecognized Command: {commandPayload}");
 
-                    case "fetch_tree_rhythms":
-                        ParseAPILine(payload);
-                        break;
-
-                    case "fetch_solar_index":
-                        ParseAPILine(payload);
-                        break;
-
-                    case "fetch_pressure_api":
-                        ParseAPILine(payload);
-                        break;
-
-                    case "fetch_sunrise_time":
-                        ParseAPILine(payload);
-                        break;
-
-                    case "fetch_sunset_time":
-                        ParseAPILine(payload);
-                        break;
-
-
-                    default:
-                        Debug.WriteLine($"Unrecognized Command: {commandPayload}");
-                        break;
-                }
             };
         }
 
@@ -688,7 +664,7 @@ namespace FAMApp
                 API_Plot.Plot.Axes.AutoScale();
                 API_Plot.Refresh();
 
-                Debug.WriteLine("Linw graph refreshed.");
+                Debug.WriteLine("Line graph refreshed.");
             }
             catch (Exception ex)
             {
@@ -923,8 +899,6 @@ namespace FAMApp
                 MessageBox.Show("IP Address is not configured.");
             }
         }
-
-
     }
 }
 

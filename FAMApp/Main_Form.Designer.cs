@@ -47,15 +47,16 @@ namespace FAMApp
             humidityToolStripMenuItem = new ToolStripMenuItem();
             sWIRRLElectricFieldToolStripMenuItem = new ToolStripMenuItem();
             treeRhythmsToolStripMenuItem = new ToolStripMenuItem();
-            Settings_Button = new ToolStripButton();
-            toolStripDropDownUpload = new ToolStripDropDownButton();
-            settingsToolStripMenuItem = new ToolStripMenuItem();
-            treeRhythmsToolStripMenuItem1 = new ToolStripMenuItem();
             solarIndexToolStripMenuItem = new ToolStripMenuItem();
             pressureToolStripMenuItem = new ToolStripMenuItem();
             sunriseTimeToolStripMenuItem = new ToolStripMenuItem();
             sunsetTimeToolStripMenuItem = new ToolStripMenuItem();
+            Settings_Button = new ToolStripButton();
+            toolStripDropDownUpload = new ToolStripDropDownButton();
+            settingsToolStripMenuItem = new ToolStripMenuItem();
+            treeRhythmsToolStripMenuItem1 = new ToolStripMenuItem();
             uAHSWIRLLToolStripMenuItem = new ToolStripMenuItem();
+            samsungWatchToolStripMenuItem = new ToolStripMenuItem();
             toolStrip1.SuspendLayout();
             SuspendLayout();
             // 
@@ -65,7 +66,7 @@ namespace FAMApp
             toolStrip1.Items.AddRange(new ToolStripItem[] { sourceButton1, Settings_Button, toolStripDropDownUpload });
             toolStrip1.Location = new Point(0, 0);
             toolStrip1.Name = "toolStrip1";
-            toolStrip1.Size = new Size(800, 25);
+            toolStrip1.Size = new Size(914, 27);
             toolStrip1.TabIndex = 0;
             toolStrip1.Text = "toolStrip1";
             // 
@@ -76,71 +77,99 @@ namespace FAMApp
             sourceButton1.Image = (Image)resources.GetObject("sourceButton1.Image");
             sourceButton1.ImageTransparentColor = Color.Magenta;
             sourceButton1.Name = "sourceButton1";
-            sourceButton1.Size = new Size(56, 22);
+            sourceButton1.Size = new Size(68, 24);
             sourceButton1.Text = "Source";
             // 
             // wifiToolStripMenuItem
             // 
             wifiToolStripMenuItem.Name = "wifiToolStripMenuItem";
-            wifiToolStripMenuItem.Size = new Size(180, 22);
+            wifiToolStripMenuItem.Size = new Size(226, 26);
             wifiToolStripMenuItem.Text = "Wifi";
             wifiToolStripMenuItem.Click += wifiToolStripMenuItem_Click;
             // 
             // cloudToolStripMenuItem
             // 
             cloudToolStripMenuItem.Name = "cloudToolStripMenuItem";
-            cloudToolStripMenuItem.Size = new Size(180, 22);
+            cloudToolStripMenuItem.Size = new Size(226, 26);
             cloudToolStripMenuItem.Text = "Load from Cloud";
             cloudToolStripMenuItem.Click += cloudToolStripMenuItem_Click;
             // 
             // microSDToolStripMenuItem
             // 
             microSDToolStripMenuItem.Name = "microSDToolStripMenuItem";
-            microSDToolStripMenuItem.Size = new Size(180, 22);
+            microSDToolStripMenuItem.Size = new Size(226, 26);
             microSDToolStripMenuItem.Text = "Load from Micro SD";
             microSDToolStripMenuItem.Click += microSDToolStripMenuItem_Click;
             // 
             // geomagnetAPIToolStripMenuItem
             // 
-            geomagnetAPIToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { geomagneticStormsToolStripMenuItem, temperatureToolStripMenuItem, humidityToolStripMenuItem, sWIRRLElectricFieldToolStripMenuItem, treeRhythmsToolStripMenuItem, solarIndexToolStripMenuItem, pressureToolStripMenuItem, sunriseTimeToolStripMenuItem, sunsetTimeToolStripMenuItem });
+            geomagnetAPIToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { geomagneticStormsToolStripMenuItem, temperatureToolStripMenuItem, humidityToolStripMenuItem, sWIRRLElectricFieldToolStripMenuItem, treeRhythmsToolStripMenuItem, solarIndexToolStripMenuItem, pressureToolStripMenuItem, sunriseTimeToolStripMenuItem, sunsetTimeToolStripMenuItem, samsungWatchToolStripMenuItem });
             geomagnetAPIToolStripMenuItem.Name = "geomagnetAPIToolStripMenuItem";
-            geomagnetAPIToolStripMenuItem.Size = new Size(180, 22);
+            geomagnetAPIToolStripMenuItem.Size = new Size(226, 26);
             geomagnetAPIToolStripMenuItem.Text = "APIs";
             // 
             // geomagneticStormsToolStripMenuItem
             // 
             geomagneticStormsToolStripMenuItem.Name = "geomagneticStormsToolStripMenuItem";
-            geomagneticStormsToolStripMenuItem.Size = new Size(185, 22);
+            geomagneticStormsToolStripMenuItem.Size = new Size(231, 26);
             geomagneticStormsToolStripMenuItem.Text = "Geomagnetic Storms";
             geomagneticStormsToolStripMenuItem.Click += geomagneticStormsToolStripMenuItem_Click;
             // 
             // temperatureToolStripMenuItem
             // 
             temperatureToolStripMenuItem.Name = "temperatureToolStripMenuItem";
-            temperatureToolStripMenuItem.Size = new Size(185, 22);
+            temperatureToolStripMenuItem.Size = new Size(231, 26);
             temperatureToolStripMenuItem.Text = "Temperature";
             temperatureToolStripMenuItem.Click += Temperature_API_Click;
             // 
             // humidityToolStripMenuItem
             // 
             humidityToolStripMenuItem.Name = "humidityToolStripMenuItem";
-            humidityToolStripMenuItem.Size = new Size(185, 22);
+            humidityToolStripMenuItem.Size = new Size(231, 26);
             humidityToolStripMenuItem.Text = "Humidity";
             humidityToolStripMenuItem.Click += Humidity_API_Click;
             // 
             // sWIRRLElectricFieldToolStripMenuItem
             // 
             sWIRRLElectricFieldToolStripMenuItem.Name = "sWIRRLElectricFieldToolStripMenuItem";
-            sWIRRLElectricFieldToolStripMenuItem.Size = new Size(185, 22);
+            sWIRRLElectricFieldToolStripMenuItem.Size = new Size(231, 26);
             sWIRRLElectricFieldToolStripMenuItem.Text = "SWIRRL Electric Field";
             sWIRRLElectricFieldToolStripMenuItem.Click += SWIRRL_API_Click;
             // 
             // treeRhythmsToolStripMenuItem
             // 
             treeRhythmsToolStripMenuItem.Name = "treeRhythmsToolStripMenuItem";
-            treeRhythmsToolStripMenuItem.Size = new Size(185, 22);
+            treeRhythmsToolStripMenuItem.Size = new Size(231, 26);
             treeRhythmsToolStripMenuItem.Text = "Tree Rhythms";
             treeRhythmsToolStripMenuItem.Click += Tree_Rhythms_API_Click;
+            // 
+            // solarIndexToolStripMenuItem
+            // 
+            solarIndexToolStripMenuItem.Name = "solarIndexToolStripMenuItem";
+            solarIndexToolStripMenuItem.Size = new Size(231, 26);
+            solarIndexToolStripMenuItem.Text = "Solar Index";
+            solarIndexToolStripMenuItem.Click += Solar_Index_Click;
+            // 
+            // pressureToolStripMenuItem
+            // 
+            pressureToolStripMenuItem.Name = "pressureToolStripMenuItem";
+            pressureToolStripMenuItem.Size = new Size(231, 26);
+            pressureToolStripMenuItem.Text = "Pressure";
+            pressureToolStripMenuItem.Click += Pressure_API_Click;
+            // 
+            // sunriseTimeToolStripMenuItem
+            // 
+            sunriseTimeToolStripMenuItem.Name = "sunriseTimeToolStripMenuItem";
+            sunriseTimeToolStripMenuItem.Size = new Size(231, 26);
+            sunriseTimeToolStripMenuItem.Text = "Sunrise Time";
+            sunriseTimeToolStripMenuItem.Click += Sunrise_Time_Click;
+            // 
+            // sunsetTimeToolStripMenuItem
+            // 
+            sunsetTimeToolStripMenuItem.Name = "sunsetTimeToolStripMenuItem";
+            sunsetTimeToolStripMenuItem.Size = new Size(231, 26);
+            sunsetTimeToolStripMenuItem.Text = "Sunset Time";
+            sunsetTimeToolStripMenuItem.Click += Sunset_Time_Click;
             // 
             // Settings_Button
             // 
@@ -148,7 +177,7 @@ namespace FAMApp
             Settings_Button.Image = (Image)resources.GetObject("Settings_Button.Image");
             Settings_Button.ImageTransparentColor = Color.Magenta;
             Settings_Button.Name = "Settings_Button";
-            Settings_Button.Size = new Size(53, 22);
+            Settings_Button.Size = new Size(66, 24);
             Settings_Button.Text = "Settings";
             Settings_Button.Click += Settings_Button_Click;
             // 
@@ -159,64 +188,44 @@ namespace FAMApp
             toolStripDropDownUpload.Image = (Image)resources.GetObject("toolStripDropDownUpload.Image");
             toolStripDropDownUpload.ImageTransparentColor = Color.Magenta;
             toolStripDropDownUpload.Name = "toolStripDropDownUpload";
-            toolStripDropDownUpload.Size = new Size(58, 22);
+            toolStripDropDownUpload.Size = new Size(72, 24);
             toolStripDropDownUpload.Text = "Upload";
             // 
             // settingsToolStripMenuItem
             // 
             settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            settingsToolStripMenuItem.Size = new Size(180, 22);
+            settingsToolStripMenuItem.Size = new Size(224, 26);
             settingsToolStripMenuItem.Text = "Settings";
             settingsToolStripMenuItem.Click += settingsToolStripMenuItem_Click;
             // 
             // treeRhythmsToolStripMenuItem1
             // 
             treeRhythmsToolStripMenuItem1.Name = "treeRhythmsToolStripMenuItem1";
-            treeRhythmsToolStripMenuItem1.Size = new Size(180, 22);
+            treeRhythmsToolStripMenuItem1.Size = new Size(224, 26);
             treeRhythmsToolStripMenuItem1.Text = "Tree Rhythms";
             treeRhythmsToolStripMenuItem1.Click += treeRhythmsUpload_Click;
-            // 
-            // solarIndexToolStripMenuItem
-            // 
-            solarIndexToolStripMenuItem.Name = "solarIndexToolStripMenuItem";
-            solarIndexToolStripMenuItem.Size = new Size(185, 22);
-            solarIndexToolStripMenuItem.Text = "Solar Index";
-            solarIndexToolStripMenuItem.Click += Solar_Index_Click;
-            // 
-            // pressureToolStripMenuItem
-            // 
-            pressureToolStripMenuItem.Name = "pressureToolStripMenuItem";
-            pressureToolStripMenuItem.Size = new Size(185, 22);
-            pressureToolStripMenuItem.Text = "Pressure";
-            pressureToolStripMenuItem.Click += Pressure_API_Click;
-            // 
-            // sunriseTimeToolStripMenuItem
-            // 
-            sunriseTimeToolStripMenuItem.Name = "sunriseTimeToolStripMenuItem";
-            sunriseTimeToolStripMenuItem.Size = new Size(185, 22);
-            sunriseTimeToolStripMenuItem.Text = "Sunrise Time";
-            sunriseTimeToolStripMenuItem.Click += Sunrise_Time_Click;
-            // 
-            // sunsetTimeToolStripMenuItem
-            // 
-            sunsetTimeToolStripMenuItem.Name = "sunsetTimeToolStripMenuItem";
-            sunsetTimeToolStripMenuItem.Size = new Size(185, 22);
-            sunsetTimeToolStripMenuItem.Text = "Sunset Time";
-            sunsetTimeToolStripMenuItem.Click += Sunset_Time_Click;
             // 
             // uAHSWIRLLToolStripMenuItem
             // 
             uAHSWIRLLToolStripMenuItem.Name = "uAHSWIRLLToolStripMenuItem";
-            uAHSWIRLLToolStripMenuItem.Size = new Size(180, 22);
+            uAHSWIRLLToolStripMenuItem.Size = new Size(224, 26);
             uAHSWIRLLToolStripMenuItem.Text = "UAH SWIRLL";
             uAHSWIRLLToolStripMenuItem.Click += UAH_SWIRLL_Upload_Click;
             // 
+            // samsungWatchToolStripMenuItem
+            // 
+            samsungWatchToolStripMenuItem.Name = "samsungWatchToolStripMenuItem";
+            samsungWatchToolStripMenuItem.Size = new Size(231, 26);
+            samsungWatchToolStripMenuItem.Text = "Samsung Watch";
+            samsungWatchToolStripMenuItem.Click += Samsung_Watch_API_Click;
+            // 
             // Main_Form
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
+            ClientSize = new Size(914, 600);
             Controls.Add(toolStrip1);
+            Margin = new Padding(3, 4, 3, 4);
             Name = "Main_Form";
             Text = "Fields Around Me";
             Load += Main_Form_Load;
@@ -268,5 +277,6 @@ namespace FAMApp
         private ToolStripMenuItem sunriseTimeToolStripMenuItem;
         private ToolStripMenuItem sunsetTimeToolStripMenuItem;
         private ToolStripMenuItem uAHSWIRLLToolStripMenuItem;
+        private ToolStripMenuItem samsungWatchToolStripMenuItem;
     }
 }
