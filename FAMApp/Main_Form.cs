@@ -19,6 +19,9 @@ using static ScottPlot.Generate;
 using DateTime = System.DateTime;
 using System.Threading.Channels;
 using static FAMApp.Settings_Form;
+using static System.Formats.Asn1.AsnWriter;
+using System.Net;
+using static Cloud_Functions;
 
 namespace FAMApp
 {
@@ -79,7 +82,14 @@ namespace FAMApp
 
         private void cloudToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
+            string selectedDate = ShowSingleDatePickerDialog();
+            if (string.IsNullOrEmpty(selectedDate))
+            {
+                MessageBox.Show("No date selected. Operation canceled.");
+                return; // Exit function if no date is selected
+            }
+            DownloadFileFromGoogleDrive($"{selectedDate}.csv", "./");
+            LoadDataFromCsv($"{selectedDate}.csv");
         }
 
         private void geomagneticStormsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -389,9 +399,9 @@ namespace FAMApp
             Debug.WriteLine($"Published command '{commandPayload}' to 'desktop/commands'.");
 
             // Read file and send line by line
-            if (File.Exists(filePath))
+            if (System.IO.File.Exists(filePath))
             {
-                foreach (var line in File.ReadLines(filePath))
+                foreach (var line in System.IO.File.ReadLines(filePath))
                 {
                     var lineMessage = new MqttApplicationMessageBuilder()
                         .WithTopic("desktop/commands")
@@ -427,16 +437,21 @@ namespace FAMApp
         {
             // Parse the payload (expected format: "timestamp,channel,data")
             var parts = payload.Split(',');
-
             double voltage = 0; //Initialization to Avoid Errors
             int channel = 0;
+            Debug.WriteLine(parts[0]);
+            Debug.WriteLine(parts[1]);
+            Debug.WriteLine(parts[2]);
+            voltage = double.Parse(parts[2]);
 
             if (parts.Length == 3 &&
                 DateTime.TryParse(parts[0], out DateTime timestamp) &&
                 int.TryParse(parts[1], out channel) &&
-                double.TryParse(parts[2], out voltage) &&
-                channel >= 1 && channel <= 4) // Ensure channel is within range
+                double.TryParse(parts[2], out voltage)) // Ensure channel is within range
             {
+                //DateTime timestamp = DateTime.Parse(parts[0]);
+                //int channel = int.Parse(parts[1]);
+                //double voltage = double.Parse(parts[2]);
                 // Ensure the channel exists in the dictionaries
                 if (!voltagesByChannel.ContainsKey(channel))
                 {
@@ -446,7 +461,7 @@ namespace FAMApp
                 {
                     _Dates[channel] = new List<DateTime>();
                 }
-
+                Debug.WriteLine("Parse and Graph Live Data Reached");
                 // Add timestamp to the respective channel without checking for duplicates
                 _Dates[channel].Add(timestamp);
 
@@ -456,6 +471,7 @@ namespace FAMApp
                 // Invoke PlotData on the main thread
                 Main_Plot.Invoke((MethodInvoker)(() =>
                 {
+
                     PlotData(voltagesByChannel, _Dates);
                 }));
             }
@@ -600,6 +616,7 @@ namespace FAMApp
 
         private void PlotData(Dictionary<int, List<double>> voltagesByChannel, Dictionary<int, List<DateTime>> timestamps)
         {
+            Debug.WriteLine("1");
             try
             {
                 Main_Plot.Plot.Clear(); // Clear previous plots
@@ -621,6 +638,7 @@ namespace FAMApp
                     linePlot.LineWidth = 2;
                     linePlot.MarkerSize = 1;
                     linePlot.Color = palette.GetColor(colorIndex++); // Get a unique color
+                    Debug.WriteLine(voltagesByChannel[channel]);
                 }
 
                 Main_Plot.Plot.Legend.IsVisible = true; // Show legend to differentiate channels
@@ -736,9 +754,9 @@ namespace FAMApp
                 {
                     string filePath = "settings.json";
 
-                    if (File.Exists(filePath))
+                    if (System.IO.File.Exists(filePath))
                     {
-                        string json = File.ReadAllText(filePath);
+                        string json = System.IO.File.ReadAllText(filePath);
 
                         // Deserialize the JSON into a Settings object
                         Settings settings = JsonConvert.DeserializeObject<Settings>(json);
@@ -775,7 +793,20 @@ namespace FAMApp
             genericUploadFunction("uah_swirll_upload");
         }
 
+        private void Upload_CSV_Cloud_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.Filter = "All files (*.*)|*.*";
+                openFileDialog.Title = "Select a file";
 
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string filePath = openFileDialog.FileName;
+                    UploadFileToGoogleDrive(filePath);
+                }
+            }
+        }
         private string ShowSingleDatePickerDialog()
         {
             using (Form dateForm = new Form())
@@ -899,6 +930,8 @@ namespace FAMApp
                 MessageBox.Show("IP Address is not configured.");
             }
         }
+
+
     }
 }
 

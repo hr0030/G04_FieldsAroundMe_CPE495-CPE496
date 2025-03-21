@@ -1,5 +1,5 @@
 {
-  "ServerIP": "192.168.1.1",
+  "ServerIP": "10.4.159.112",
   "SamplingFrequency": "100",
   "Sensors": [
     {

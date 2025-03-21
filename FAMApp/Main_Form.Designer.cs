@@ -51,12 +51,13 @@ namespace FAMApp
             pressureToolStripMenuItem = new ToolStripMenuItem();
             sunriseTimeToolStripMenuItem = new ToolStripMenuItem();
             sunsetTimeToolStripMenuItem = new ToolStripMenuItem();
+            samsungWatchToolStripMenuItem = new ToolStripMenuItem();
             Settings_Button = new ToolStripButton();
             toolStripDropDownUpload = new ToolStripDropDownButton();
             settingsToolStripMenuItem = new ToolStripMenuItem();
             treeRhythmsToolStripMenuItem1 = new ToolStripMenuItem();
             uAHSWIRLLToolStripMenuItem = new ToolStripMenuItem();
-            samsungWatchToolStripMenuItem = new ToolStripMenuItem();
+            cSVToCloudToolStripMenuItem = new ToolStripMenuItem();
             toolStrip1.SuspendLayout();
             SuspendLayout();
             // 
@@ -171,6 +172,13 @@ namespace FAMApp
             sunsetTimeToolStripMenuItem.Text = "Sunset Time";
             sunsetTimeToolStripMenuItem.Click += Sunset_Time_Click;
             // 
+            // samsungWatchToolStripMenuItem
+            // 
+            samsungWatchToolStripMenuItem.Name = "samsungWatchToolStripMenuItem";
+            samsungWatchToolStripMenuItem.Size = new Size(231, 26);
+            samsungWatchToolStripMenuItem.Text = "Samsung Watch";
+            samsungWatchToolStripMenuItem.Click += Samsung_Watch_API_Click;
+            // 
             // Settings_Button
             // 
             Settings_Button.DisplayStyle = ToolStripItemDisplayStyle.Text;
@@ -184,7 +192,7 @@ namespace FAMApp
             // toolStripDropDownUpload
             // 
             toolStripDropDownUpload.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            toolStripDropDownUpload.DropDownItems.AddRange(new ToolStripItem[] { settingsToolStripMenuItem, treeRhythmsToolStripMenuItem1, uAHSWIRLLToolStripMenuItem });
+            toolStripDropDownUpload.DropDownItems.AddRange(new ToolStripItem[] { settingsToolStripMenuItem, treeRhythmsToolStripMenuItem1, uAHSWIRLLToolStripMenuItem, cSVToCloudToolStripMenuItem });
             toolStripDropDownUpload.Image = (Image)resources.GetObject("toolStripDropDownUpload.Image");
             toolStripDropDownUpload.ImageTransparentColor = Color.Magenta;
             toolStripDropDownUpload.Name = "toolStripDropDownUpload";
@@ -212,12 +220,12 @@ namespace FAMApp
             uAHSWIRLLToolStripMenuItem.Text = "UAH SWIRLL";
             uAHSWIRLLToolStripMenuItem.Click += UAH_SWIRLL_Upload_Click;
             // 
-            // samsungWatchToolStripMenuItem
+            // cSVToCloudToolStripMenuItem
             // 
-            samsungWatchToolStripMenuItem.Name = "samsungWatchToolStripMenuItem";
-            samsungWatchToolStripMenuItem.Size = new Size(231, 26);
-            samsungWatchToolStripMenuItem.Text = "Samsung Watch";
-            samsungWatchToolStripMenuItem.Click += Samsung_Watch_API_Click;
+            cSVToCloudToolStripMenuItem.Name = "cSVToCloudToolStripMenuItem";
+            cSVToCloudToolStripMenuItem.Size = new Size(224, 26);
+            cSVToCloudToolStripMenuItem.Text = "CSV to Cloud";
+            cSVToCloudToolStripMenuItem.Click += Upload_CSV_Cloud_Click;
             // 
             // Main_Form
             // 
@@ -278,5 +286,6 @@ namespace FAMApp
         private ToolStripMenuItem sunsetTimeToolStripMenuItem;
         private ToolStripMenuItem uAHSWIRLLToolStripMenuItem;
         private ToolStripMenuItem samsungWatchToolStripMenuItem;
+        private ToolStripMenuItem cSVToCloudToolStripMenuItem;
     }
 }
