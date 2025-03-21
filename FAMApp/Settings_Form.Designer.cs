@@ -32,7 +32,6 @@
             Save_Settings_Button = new Button();
             IP_Address_Textbox = new TextBox();
             label2 = new Label();
-            Sampling_Frequency_Textbox = new TextBox();
             Latitude_Textbox = new TextBox();
             label3 = new Label();
             Sensor_Name_Textbox = new TextBox();
@@ -41,6 +40,8 @@
             label5 = new Label();
             Longitude_Textbox = new TextBox();
             label6 = new Label();
+            Two_Hundred_Hz_Button = new Button();
+            Hundred_Hz_Button = new Button();
             SuspendLayout();
             // 
             // label1
@@ -77,13 +78,6 @@
             label2.Size = new Size(115, 15);
             label2.TabIndex = 3;
             label2.Text = "Sampling Frequency";
-            // 
-            // Sampling_Frequency_Textbox
-            // 
-            Sampling_Frequency_Textbox.Location = new Point(226, 70);
-            Sampling_Frequency_Textbox.Name = "Sampling_Frequency_Textbox";
-            Sampling_Frequency_Textbox.Size = new Size(321, 23);
-            Sampling_Frequency_Textbox.TabIndex = 4;
             // 
             // Latitude_Textbox
             // 
@@ -149,11 +143,33 @@
             label6.TabIndex = 11;
             label6.Text = "Longitude";
             // 
+            // Two_Hundred_Hz_Button
+            // 
+            Two_Hundred_Hz_Button.Location = new Point(226, 73);
+            Two_Hundred_Hz_Button.Name = "Two_Hundred_Hz_Button";
+            Two_Hundred_Hz_Button.Size = new Size(156, 23);
+            Two_Hundred_Hz_Button.TabIndex = 13;
+            Two_Hundred_Hz_Button.Text = "250 Hz";
+            Two_Hundred_Hz_Button.UseVisualStyleBackColor = true;
+            Two_Hundred_Hz_Button.Click += Two_Hundred_Hz_Button_Click;
+            // 
+            // Hundred_Hz_Button
+            // 
+            Hundred_Hz_Button.Location = new Point(391, 73);
+            Hundred_Hz_Button.Name = "Hundred_Hz_Button";
+            Hundred_Hz_Button.Size = new Size(156, 23);
+            Hundred_Hz_Button.TabIndex = 14;
+            Hundred_Hz_Button.Text = "100 Hz";
+            Hundred_Hz_Button.UseVisualStyleBackColor = true;
+            Hundred_Hz_Button.Click += Hundred_Hz_Click;
+            // 
             // Settings_Form
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(559, 407);
+            Controls.Add(Hundred_Hz_Button);
+            Controls.Add(Two_Hundred_Hz_Button);
             Controls.Add(Longitude_Textbox);
             Controls.Add(label6);
             Controls.Add(Sensor_Number_Textbox);
@@ -162,7 +178,6 @@
             Controls.Add(label3);
             Controls.Add(Sensor_Name_Textbox);
             Controls.Add(label4);
-            Controls.Add(Sampling_Frequency_Textbox);
             Controls.Add(label2);
             Controls.Add(IP_Address_Textbox);
             Controls.Add(Save_Settings_Button);
@@ -180,7 +195,6 @@
         private Button Save_Settings_Button;
         private TextBox IP_Address_Textbox;
         private Label label2;
-        private TextBox Sampling_Frequency_Textbox;
         private TextBox Latitude_Textbox;
         private Label label3;
         private TextBox Sensor_Name_Textbox;
@@ -189,5 +203,7 @@
         private Label label5;
         private TextBox Longitude_Textbox;
         private Label label6;
+        private Button Two_Hundred_Hz_Button;
+        private Button Hundred_Hz_Button;
     }
 }

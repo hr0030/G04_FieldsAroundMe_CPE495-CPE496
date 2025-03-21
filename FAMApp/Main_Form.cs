@@ -209,9 +209,10 @@ namespace FAMApp
                 string selectedDate = ShowDoubleDatePickerDialog();
                 if (selectedDate != null)
                 {
+                    string updatedCommandPayload = $"{commandPayload},{selectedDate}";
                     // Call the popup and MQTT receiver with the IP address
                     spawnAPIPopup(yAxisLabel);
-                    MqttReceiver(ipAddress, subscriberTopic, commandPayload);
+                    MqttReceiver(ipAddress, subscriberTopic, updatedCommandPayload);
 
                     // Start the asynchronous process
                     _ = StartAsync();
@@ -398,13 +399,15 @@ namespace FAMApp
             await client.PublishAsync(commandMessage);
             Debug.WriteLine($"Published command '{commandPayload}' to 'desktop/commands'.");
 
+            Thread.Sleep(10); // Sleep for 10 milliseconds
+
             // Read file and send line by line
             if (System.IO.File.Exists(filePath))
             {
                 foreach (var line in System.IO.File.ReadLines(filePath))
                 {
                     var lineMessage = new MqttApplicationMessageBuilder()
-                        .WithTopic("desktop/commands")
+                        .WithTopic("desktop/data")
                         .WithPayload(line)
                         .Build();
 
@@ -421,12 +424,12 @@ namespace FAMApp
 
             // Send EOF to indicate the end of the file
             var eofMessage = new MqttApplicationMessageBuilder()
-                .WithTopic("desktop/commands")
-                .WithPayload("EOF")
+                .WithTopic("desktop/data")
+                .WithPayload("End of File")
                 .Build();
 
             await client.PublishAsync(eofMessage);
-            Debug.WriteLine("Published EOF to indicate end of file.");
+            Debug.WriteLine("Published 'End of File' to indicate end of file.");
 
             await client.DisconnectAsync();
             Debug.WriteLine("Disconnected from MQTT broker.");
@@ -461,7 +464,6 @@ namespace FAMApp
                 {
                     _Dates[channel] = new List<DateTime>();
                 }
-                Debug.WriteLine("Parse and Graph Live Data Reached");
                 // Add timestamp to the respective channel without checking for duplicates
                 _Dates[channel].Add(timestamp);
 
@@ -780,7 +782,22 @@ namespace FAMApp
 
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            genericUploadFunction("settings_upload");
+            // Load the settings (if not already loaded)
+            SettingsLoader.LoadSettings();
+
+            // Get the IP address from the global variable
+            string ipAddress = GlobalSettings.ServerIP;
+
+            // Check if the IP address is not empty or null
+            if (!string.IsNullOrEmpty(ipAddress))
+            {
+                MqttSendFile(ipAddress, "settings_upload", "settings.json");
+            }
+            else
+            {
+                MessageBox.Show("Error: Ip Address is Undefined", "IP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
         }
 
         private void treeRhythmsUpload_Click(object sender, EventArgs e)
@@ -805,8 +822,14 @@ namespace FAMApp
                     string filePath = openFileDialog.FileName;
                     UploadFileToGoogleDrive(filePath);
                 }
+                else
+                {
+                    MessageBox.Show("Error: File is Undefined", "File Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
         }
+
+
         private string ShowSingleDatePickerDialog()
         {
             using (Form dateForm = new Form())
@@ -926,8 +949,7 @@ namespace FAMApp
             }
             else
             {
-                // Handle the case where the IP address is not set
-                MessageBox.Show("IP Address is not configured.");
+                MessageBox.Show("Error: Ip Address is Undefined", "IP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

@@ -36,7 +36,16 @@ namespace FAMApp
                 Settings settings = JsonConvert.DeserializeObject<Settings>(json);
 
                 IP_Address_Textbox.Text = settings.ServerIP;
-                Sampling_Frequency_Textbox.Text = settings.SamplingFrequency;
+                if(settings.SamplingFrequency == "100")
+                {
+                    Hundred_Hz_Button.Enabled = false;
+                    Two_Hundred_Hz_Button.Enabled = true;
+                }
+                else
+                {
+                    Hundred_Hz_Button.Enabled = true;
+                    Two_Hundred_Hz_Button.Enabled = false;
+                }
             }
         }
 
@@ -60,7 +69,14 @@ namespace FAMApp
 
                 // Always update IP and Sampling Frequency
                 settings.ServerIP = IP_Address_Textbox.Text;
-                settings.SamplingFrequency = Sampling_Frequency_Textbox.Text;
+                if(Hundred_Hz_Button.Enabled == true)
+                { 
+                    settings.SamplingFrequency = "100"; 
+                }
+                else
+                {
+                    settings.SamplingFrequency = "250";
+                }
 
                 int sensorNumber;
                 if (int.TryParse(Sensor_Number_Textbox.Text, out sensorNumber) && sensorNumber >= 1 && sensorNumber <= 3)
@@ -88,6 +104,21 @@ namespace FAMApp
             }
         }
 
+        private void button1_Click(object sender, EventArgs e)
+        {
 
+        }
+
+        private void Hundred_Hz_Click(object sender, EventArgs e)
+        {
+            Hundred_Hz_Button.Enabled = false;
+            Two_Hundred_Hz_Button.Enabled = true;
+        }
+
+        private void Two_Hundred_Hz_Button_Click(object sender, EventArgs e)
+        {
+            Hundred_Hz_Button.Enabled = true;
+            Two_Hundred_Hz_Button.Enabled = false;
+        }
     }
 }
