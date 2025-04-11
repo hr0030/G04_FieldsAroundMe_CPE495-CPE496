@@ -56,7 +56,6 @@ namespace FAMApp
                 string filePath = "settings.json";
                 Settings settings;
 
-                // Load existing settings if the file exists, otherwise create a new one
                 if (File.Exists(filePath))
                 {
                     string json = File.ReadAllText(filePath);
@@ -66,8 +65,6 @@ namespace FAMApp
                 {
                     settings = new Settings();
                 }
-
-                // Always update IP and Sampling Frequency
                 settings.ServerIP = IP_Address_Textbox.Text;
                 if(Hundred_Hz_Button.Enabled == true)
                 { 
@@ -81,7 +78,6 @@ namespace FAMApp
                 int sensorNumber;
                 if (int.TryParse(Sensor_Number_Textbox.Text, out sensorNumber) && sensorNumber >= 1 && sensorNumber <= 3)
                 {
-                    // Ensure the list has enough sensors
                     while (settings.Sensors.Count < sensorNumber)
                     {
                         settings.Sensors.Add(new Sensor { Name = "", Longitude = "", Latitude = "" });
@@ -92,7 +88,6 @@ namespace FAMApp
                     settings.Sensors[sensorNumber - 1].Latitude = Latitude_Textbox.Text;
                 }
 
-                // Save updated settings to file
                 string jsonOutput = JsonConvert.SerializeObject(settings, Formatting.Indented);
                 File.WriteAllText(filePath, jsonOutput);
 

@@ -6,10 +6,8 @@ using ScottPlot.WinForms;
 public class Parse_Graph_Functions 
 {
 
-    // Declare voltagesByChannel as a dictionary to store voltage data for each channel
     public Dictionary<int, List<double>> voltagesByChannel = new Dictionary<int, List<double>>();
     public Dictionary<int, List<DateTime>> _Dates = new Dictionary<int, List<DateTime>>();
-    // At the class level
     public List<DateTime> API_Dates = new List<DateTime>();
     public List<double> API_Magnitude = new List<double>();
 
@@ -24,7 +22,6 @@ public class Parse_Graph_Functions
 
     public void LoadDataFromCsv(string filePath)
     {
-        // Dictionary to hold separate lists for each channel (1-4)
         var voltagesByChannel = new Dictionary<int, List<double>>
 {
     { 1, new List<double>() },
@@ -37,7 +34,7 @@ public class Parse_Graph_Functions
         {
             using (var reader = new StreamReader(filePath))
             {
-                reader.ReadLine(); // Skip header line
+                reader.ReadLine(); // Skip header
 
                 while (!reader.EndOfStream)
                 {
@@ -50,7 +47,7 @@ public class Parse_Graph_Functions
                         double.TryParse(columns[2], out double millivolts) &&
                         channel >= 1 && channel <= 4) // Ensure valid channel range
                     {
-                        // Ensure the channel exists in _Dates
+
                         if (!_Dates.ContainsKey(channel))
                         {
                             _Dates[channel] = new List<DateTime>();
@@ -62,7 +59,7 @@ public class Parse_Graph_Functions
                 }
             }
 
-            // Call the plotting function for each channel
+
             Main_Plot.Invoke((MethodInvoker)(() =>
             {
                 PlotData(voltagesByChannel, _Dates);
@@ -78,7 +75,6 @@ public class Parse_Graph_Functions
 
     public void ParseAndGraphLiveData(string payload)
     {
-        // Parse the payload (expected format: "timestamp,channel,data")
         var parts = payload.Split(',');
         double voltage = 0; //Initialization to Avoid Errors
         int channel = 0;
@@ -86,9 +82,9 @@ public class Parse_Graph_Functions
         if (parts.Length == 3 &&
             DateTime.TryParse(parts[0], out DateTime timestamp) &&
             int.TryParse(parts[1], out channel) &&
-            double.TryParse(parts[2], out voltage)) // Ensure channel is within range
+            double.TryParse(parts[2], out voltage)) // Parse payload
         {
-            // Ensure the channel exists in the dictionaries
+
             if (!voltagesByChannel.ContainsKey(channel))
             {
                 voltagesByChannel[channel] = new List<double>();
@@ -97,10 +93,8 @@ public class Parse_Graph_Functions
             {
                 _Dates[channel] = new List<DateTime>();
             }
-            // Add timestamp to the respective channel without checking for duplicates
-            _Dates[channel].Add(timestamp);
 
-            // Add voltage data to the corresponding channel list
+            _Dates[channel].Add(timestamp);
             voltagesByChannel[channel].Add(voltage);
 
             // Invoke PlotData on the main thread
@@ -122,30 +116,27 @@ public class Parse_Graph_Functions
 
         var parts = payload.Split(',');
 
-        // Ensure there are exactly 2 parts (timestamp and a single numerical value)
+        
         if (parts.Length != 2)
         {
             Debug.WriteLine($"Invalid payload format: {payload}");
             return;
         }
 
-        // Extract the timestamp from the payload
-        string timestampStr = parts[0].Trim();
+        string timestampStr = parts[0].Trim(); // Get Timestamp
         if (!DateTime.TryParse(timestampStr, out DateTime timestamp))
         {
             Debug.WriteLine($"Failed to parse timestamp: {timestampStr}");
             return;
         }
 
-        // Extract the single numerical value
-        string numericStr = parts[1].Trim();
+        string numericStr = parts[1].Trim(); // Get Data
         if (!double.TryParse(numericStr, out double numericValue))
         {
             Debug.WriteLine($"Failed to parse numerical value: {numericStr}");
             return;
         }
 
-        // Add timestamp and numerical value to the global lists
         API_Dates.Add(timestamp);
         API_Magnitude.Add(numericValue);
     }
@@ -190,10 +181,9 @@ public class Parse_Graph_Functions
 
     public void PlotData(Dictionary<int, List<double>> voltagesByChannel, Dictionary<int, List<DateTime>> timestamps)
     {
-        Debug.WriteLine("1");
         try
         {
-            Main_Plot.Plot.Clear(); // Clear previous plots
+            Main_Plot.Plot.Clear(); // Clear plot
 
             IPalette palette = new ScottPlot.Palettes.Category10();
 
@@ -201,7 +191,7 @@ public class Parse_Graph_Functions
             foreach (var channel in voltagesByChannel.Keys)
             {
                 if (voltagesByChannel[channel].Count == 0 || !timestamps.ContainsKey(channel) || timestamps[channel].Count == 0)
-                    continue; // Skip empty channels or channels without timestamps
+                    continue; // Skip empty channels
 
                 double[] xs = timestamps[channel].Select(date => date.ToOADate()).ToArray(); // Get timestamps for the current channel
                 double[] ys = voltagesByChannel[channel].ToArray(); // Get voltages for the current channel
@@ -215,8 +205,8 @@ public class Parse_Graph_Functions
                 Debug.WriteLine(voltagesByChannel[channel]);
             }
 
-            Main_Plot.Plot.Legend.IsVisible = true; // Show legend to differentiate channels
-            Main_Plot.Plot.Axes.AutoScale(); // Auto-scale for better visibility
+            Main_Plot.Plot.Legend.IsVisible = true;
+            Main_Plot.Plot.Axes.AutoScale();
             Main_Plot.Refresh();
         }
         catch (Exception ex)
@@ -225,6 +215,39 @@ public class Parse_Graph_Functions
         }
     }
 
+
+    public void PlotAPIDataOverlay()
+    {
+        try
+        {
+
+            IPalette palette = new ScottPlot.Palettes.Category10();
+
+            int colorIndex = 4;
+
+
+            double[] xs = API_Dates.ConvertAll(date => date.ToOADate()).ToArray();
+            double[] ys = API_Magnitude.ToArray();
+
+            var linePlot = Main_Plot.Plot.Add.Scatter(xs, ys);
+
+            linePlot.Axes.YAxis = Main_Plot.Plot.Axes.Right;
+            linePlot.Label = "API";
+            linePlot.LineWidth = 2;
+            linePlot.MarkerSize = 1;
+            linePlot.Color = palette.GetColor(colorIndex++); // Get a unique color
+          
+            Main_Plot.Plot.Legend.IsVisible = true; 
+            Main_Plot.Plot.Axes.AutoScale();
+            Main_Plot.Refresh();
+
+
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error plotting data: {ex.Message}");
+        }
+    }
 
     public void PlotLineAPIData(List<DateTime> timestamps, List<double> data)
     {
@@ -236,8 +259,8 @@ public class Parse_Graph_Functions
                 return;
             }
 
-            // Convert DateTime to OADate for plotting
-            double[] xs = timestamps.ConvertAll(date => date.ToOADate()).ToArray();
+            
+            double[] xs = timestamps.ConvertAll(date => date.ToOADate()).ToArray(); // Convert DateTime to OADate
             double[] ys = data.ToArray();
 
             if (xs.Length != ys.Length)
@@ -252,7 +275,6 @@ public class Parse_Graph_Functions
             linePlot.LineWidth = 2;
             linePlot.MarkerSize = 1;
 
-            // Auto-scale the plot and refresh
             API_Plot.Plot.Axes.AutoScale();
             API_Plot.Refresh();
 
@@ -273,8 +295,7 @@ public class Parse_Graph_Functions
                 return;
             }
 
-            // Convert DateTime to OADate for plotting
-            double[] xs = timestamps.ConvertAll(date => date.ToOADate()).ToArray();
+            double[] xs = timestamps.ConvertAll(date => date.ToOADate()).ToArray(); // Convert DateTime to OADate
             double[] ys = data.ToArray();
 
             if (xs.Length != ys.Length)
@@ -301,7 +322,6 @@ public class Parse_Graph_Functions
             scatterPlot.MarkerSize = 10;
             scatterPlot.LineStyle = ScottPlot.LineStyle.None;
 
-            // Auto-scale the plot and refresh
             API_Plot.Plot.Axes.AutoScale();
             API_Plot.Refresh();
 
@@ -313,6 +333,30 @@ public class Parse_Graph_Functions
         }
     }
 
+    public void ClearAPIOverlay()
+    {
+        try
+        {
+            var apiPlot = Main_Plot.Plot.GetPlottables()
+                            .OfType<ScottPlot.Plottables.Scatter>()
+                            .FirstOrDefault(p => p.Label == "API");
+
+            if (apiPlot != null)
+            {
+                Main_Plot.Plot.Remove(apiPlot);
+                Main_Plot.Plot.Axes.AutoScale();
+                Main_Plot.Refresh();
+            }
+            else
+            {
+                MessageBox.Show("API overlay not found.");
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error removing API overlay: {ex.Message}");
+        }
+    }
 
 
 }

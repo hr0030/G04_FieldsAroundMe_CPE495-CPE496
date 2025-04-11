@@ -1,16 +1,17 @@
 ﻿using ScottPlot.WinForms;
-
+using static Parse_Graph_Functions;
 public class Popup_Functions
 {
 
     private FormsPlot Main_Plot;
     private FormsPlot API_Plot;
-    private Control originalParent; // Store the original parent container
-
-    public Popup_Functions(FormsPlot mainPlot, FormsPlot apiPlot)
+    private Control originalParent;
+    Parse_Graph_Functions parse_graph;
+    public Popup_Functions(FormsPlot mainPlot, FormsPlot apiPlot, Parse_Graph_Functions parsegraph)
     {
         this.Main_Plot = mainPlot;
         this.API_Plot = apiPlot;
+        this.parse_graph = parsegraph;
     }
 
     public string ShowSingleDatePickerDialog()
@@ -41,7 +42,7 @@ public class Popup_Functions
 
             if (dateForm.ShowDialog() == DialogResult.OK)
             {
-                return datePicker.Value.ToString("yyyy_MM_dd"); // Format: d_m_y
+                return datePicker.Value.ToString("yyyy_MM_dd"); 
             }
         }
         return null; // If the user cancels the selection
@@ -89,7 +90,7 @@ public class Popup_Functions
                     return null;
                 }
                 string return_date_string = startDatePicker.Value.ToString("yyyy_MM_dd") + "," + endDatePicker.Value.ToString("yyyy_MM_dd");
-                return return_date_string; // Format: d_m_y
+                return return_date_string; 
             }
         }
         return null; // If the user cancels the selection
@@ -97,47 +98,61 @@ public class Popup_Functions
 
     public void spawnAPIPopup(string yAxisLabel)
     {
-        // Check if API_Plot already has a parent
         if (API_Plot.Parent != null)
         {
-            originalParent = API_Plot.Parent; // Store the original parent
-            originalParent.Controls.Remove(API_Plot); // Remove it from the parent
+            originalParent = API_Plot.Parent;
+            originalParent.Controls.Remove(API_Plot); 
         }
 
-        // Create a new Form for the pop-out window
         Form popOutForm = new Form
         {
-            Text = "New Plot Window",
+            Text = "API Plot",
             Size = new Size(500, 400)
         };
 
-        // Clear the plot before displaying the new form
+        Panel panel = new Panel
+        {
+            Dock = DockStyle.Fill
+        };
+
+        Button overlayAPIButton = new Button
+        {
+            Text = "Overlay API on Main Graph",
+            AutoSize = true,
+            Anchor = AnchorStyles.Bottom,
+            Padding = new Padding(10),
+            Margin = new Padding(10)
+        };
+
+        overlayAPIButton.Click += (s, e) =>
+        {
+            parse_graph.PlotAPIDataOverlay();
+        };
+
+        overlayAPIButton.Dock = DockStyle.Bottom;
         API_Plot.Plot.Clear();
         API_Plot.Refresh();
-
-        // Add API_Plot to the new form
-        popOutForm.Controls.Add(API_Plot);
         API_Plot.Dock = DockStyle.Fill;
-
-        // Configure plot labels
+        panel.Controls.Add(API_Plot);
+        panel.Controls.Add(overlayAPIButton);
+        popOutForm.Controls.Add(panel);
         API_Plot.Plot.Axes.DateTimeTicksBottom();
         API_Plot.Plot.Axes.Bottom.Label.Text = "Date and Time";
         API_Plot.Plot.Axes.Left.Label.Text = yAxisLabel;
         API_Plot.Refresh();
 
-        // Handle the form closing event to restore API_Plot
         popOutForm.FormClosing += (s, e) =>
         {
             if (originalParent != null)
             {
                 originalParent.Controls.Add(API_Plot);
-                API_Plot.Dock = DockStyle.Fill; // Restore layout
+                API_Plot.Dock = DockStyle.Fill; 
                 API_Plot.Refresh();
             }
         };
 
-        // Show the pop-out window
         popOutForm.Show();
     }
+
 
 }

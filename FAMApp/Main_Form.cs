@@ -32,7 +32,7 @@ namespace FAMApp
         public FormsPlot Main_Plot;
         public FormsPlot API_Plot;
 
-       
+
         Popup_Functions popups;
         Parse_Graph_Functions parse_graph;
         MQTT_Functions mqtt;
@@ -42,8 +42,8 @@ namespace FAMApp
             InitializeComponent();
             InitializeChart();
             InitializeNewAPIPlot();
-            popups = new Popup_Functions(Main_Plot, API_Plot);
             parse_graph = new Parse_Graph_Functions(Main_Plot, API_Plot);
+            popups = new Popup_Functions(Main_Plot, API_Plot, parse_graph);
             mqtt = new MQTT_Functions(parse_graph);
         }
 
@@ -126,17 +126,6 @@ namespace FAMApp
         {
             getAPIGeneral("mb", "api/data", "fetch_pressure_api");
         }
-
-        private void Sunrise_Time_Click(object sender, EventArgs e)
-        {
-            getAPIGeneral("Time", "api/data", "fetch_sunrise_time");
-        }
-
-        private void Sunset_Time_Click(object sender, EventArgs e)
-        {
-            getAPIGeneral("Time", "api/data", "fetch_sunset_time");
-        }
-
         private void Samsung_Watch_API_Click(object sender, EventArgs e)
         {
             getAPIGeneral("BPM", "api/data", "fetch_samsung_watch");
@@ -144,29 +133,24 @@ namespace FAMApp
 
         private void getAPIGeneral(string yAxisLabel, string subscriberTopic, string commandPayload)
         {
-            // Load the settings (if not already loaded)
-            SettingsLoader.LoadSettings();
+            SettingsLoader.LoadSettings(); // Load the settings
 
-            // Clear Data From Plot
             API_Plot.Plot.Clear();
             parse_graph.API_Dates.Clear();
             parse_graph.API_Magnitude.Clear();
 
-            // Get the IP address from the global variable
-            string ipAddress = GlobalSettings.ServerIP;
+            
+            string ipAddress = GlobalSettings.ServerIP; // Get the IP address from settings
 
-            // Check if the IP address is not empty or null
             if (!string.IsNullOrEmpty(ipAddress))
             {
                 string selectedDate = popups.ShowDoubleDatePickerDialog();
                 if (selectedDate != null)
                 {
                     string updatedCommandPayload = $"{commandPayload},{selectedDate}";
-                    // Call the popup and MQTT receiver with the IP address
                     popups.spawnAPIPopup(yAxisLabel);
                     mqtt.MqttReceiver(ipAddress, subscriberTopic, updatedCommandPayload);
 
-                    // Start the asynchronous process
                     _ = mqtt.StartAsync();
                 }
                 else
@@ -176,7 +160,6 @@ namespace FAMApp
             }
             else
             {
-                // Handle the case where the IP address is not set
                 MessageBox.Show("IP Address is not configured.");
             }
         }
@@ -187,23 +170,23 @@ namespace FAMApp
 
         private void wifiToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Load the settings (if not already loaded)
-            SettingsLoader.LoadSettings();
+            SettingsLoader.LoadSettings(); // Load the settings
 
-            // Get the IP address from the global variable
-            string ipAddress = GlobalSettings.ServerIP;
-            if (!string.IsNullOrEmpty(ipAddress))
+            string ipAddress = GlobalSettings.ServerIP; // Get the IP address from settings
+            if (!string.IsNullOrEmpty(ipAddress)) 
             {
                 mqtt.MqttReceiver(ipAddress, "sensor/data", "live");
                 _ = mqtt.StartAsync();
             }
             else
             {
-                // Handle the case where the IP address is not set
                 MessageBox.Show("IP Address is not configured.");
             }
         }
 
+        // This Function is used to graph .CSVs downloaded to the Computer. 
+        // Simply opens file explorer window and passes file to LoadDataFromCSV function 
+         
         private void microSDToolStripMenuItem_Click(object sender, EventArgs e)
         {
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
@@ -219,13 +202,16 @@ namespace FAMApp
             }
         }
 
+
+        // Boot up Settings_Form when the settings button is pressed
         private void Settings_Button_Click(object sender, EventArgs e)
         {
-            // Create an instance of the Settings_Form
             Settings_Form settingsForm = new Settings_Form();
             settingsForm.ShowDialog();
         }
 
+
+        // Commonly used function that reads in settings from settings.json. Currently only reads the IP Address
         public static class SettingsLoader
         {
             public static void LoadSettings()
@@ -237,17 +223,12 @@ namespace FAMApp
                     if (System.IO.File.Exists(filePath))
                     {
                         string json = System.IO.File.ReadAllText(filePath);
-
-                        // Deserialize the JSON into a Settings object
                         Settings settings = JsonConvert.DeserializeObject<Settings>(json);
-
-                        // Set the global ServerIP to the value read from the JSON
                         GlobalSettings.ServerIP = settings.ServerIP;
                     }
                     else
                     {
                         MessageBox.Show("Settings file not found. Using default IP.");
-                        // Set a default IP if settings are not found
                         GlobalSettings.ServerIP = "192.168.1.1";
                     }
                 }
@@ -258,15 +239,16 @@ namespace FAMApp
             }
         }
 
+
+
+        // When Upload Settings is clicked, automatically pass the settings.json file to the MqttSendFile function
+
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Load the settings (if not already loaded)
-            SettingsLoader.LoadSettings();
+            SettingsLoader.LoadSettings(); // Load the settings
 
-            // Get the IP address from the global variable
-            string ipAddress = GlobalSettings.ServerIP;
+            string ipAddress = GlobalSettings.ServerIP; // Get the IP Address from Settings
 
-            // Check if the IP address is not empty or null
             if (!string.IsNullOrEmpty(ipAddress))
             {
                 mqtt.MqttSendFile(ipAddress, "settings_upload", "settings.json");
@@ -288,6 +270,8 @@ namespace FAMApp
             genericUploadFunction("uah_swirll_upload");
         }
 
+
+        // Opens file explorer window, then passes selected file to UploadFileToGoogleDrive, which does as it says on the tin.
         private void Upload_CSV_Cloud_Click(object sender, EventArgs e)
         {
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
@@ -307,23 +291,22 @@ namespace FAMApp
             }
         }
 
+
+        // Function used to upload file line by line via MQTT, generic function, passes commandpayload where it is handled by server. You should know the drill by now.
+
         private void genericUploadFunction(string commandPayload)
         {
-            // Load the settings (if not already loaded)
-            SettingsLoader.LoadSettings();
+            SettingsLoader.LoadSettings(); // Load the settings
 
-            // Get the IP address from the global variable
-            string ipAddress = GlobalSettings.ServerIP;
+            string ipAddress = GlobalSettings.ServerIP; // Get the IP address from settings
 
-            // Check if the IP address is not empty or null
             if (!string.IsNullOrEmpty(ipAddress))
             {
-                // Show date picker dialog and get the selected date
                 string selectedDate = popups.ShowSingleDatePickerDialog();
                 if (string.IsNullOrEmpty(selectedDate))
                 {
                     MessageBox.Show("No date selected. Operation canceled.");
-                    return; // Exit function if no date is selected
+                    return;
                 }
 
                 using (OpenFileDialog openFileDialog = new OpenFileDialog())
@@ -334,10 +317,7 @@ namespace FAMApp
                     if (openFileDialog.ShowDialog() == DialogResult.OK)
                     {
                         string filePath = openFileDialog.FileName;
-
-                        // Modify the command payload to include the selected date
                         string updatedCommandPayload = $"{commandPayload},{selectedDate}";
-
                         mqtt.MqttSendFile(ipAddress, updatedCommandPayload, filePath);
                     }
                 }
@@ -348,6 +328,22 @@ namespace FAMApp
             }
         }
 
+        
+        // Centers Graph when button is pressed.
+
+        private void centerButton_Click(object sender, EventArgs e)
+        {
+            Main_Plot.Plot.Axes.AutoScale();
+            Main_Plot.Refresh();
+        }
+
+
+        // Removes API overlay Axis
+
+        private void clearAPIButton_Click(object sender, EventArgs e)
+        {
+            parse_graph.ClearAPIOverlay();
+        }
 
     }
 }

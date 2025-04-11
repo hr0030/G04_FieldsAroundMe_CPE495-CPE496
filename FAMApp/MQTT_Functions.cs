@@ -29,7 +29,7 @@ public class MQTT_Functions
         {
             Debug.WriteLine("Connected to MQTT broker.");
 
-            // Publish "live" to the "desktop/commands" topic
+
             var message = new MqttApplicationMessageBuilder()
                 .WithTopic("desktop/commands")
                 .WithPayload(commandPayload)
@@ -41,7 +41,7 @@ public class MQTT_Functions
             {
 
             }
-            // Subscribe to the subscriberTopic topic
+
             await _client.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic(subscriberTopic).Build());
             Debug.WriteLine($"Subscribed to topic '{subscriberTopic}'.");
         };
@@ -49,7 +49,6 @@ public class MQTT_Functions
         _client.DisconnectedAsync += async e =>
         {
             Debug.WriteLine("Disconnected from MQTT broker.");
-            // Error Handling Logic here
         };
 
         _client.ApplicationMessageReceivedAsync += async e =>
@@ -92,7 +91,6 @@ public class MQTT_Functions
         await client.ConnectAsync(options);
         Debug.WriteLine("Connected to MQTT broker.");
 
-        // Send the command payload first
         var commandMessage = new MqttApplicationMessageBuilder()
             .WithTopic("desktop/commands")
             .WithPayload(commandPayload)
@@ -101,9 +99,8 @@ public class MQTT_Functions
         await client.PublishAsync(commandMessage);
         Debug.WriteLine($"Published command '{commandPayload}' to 'desktop/commands'.");
 
-        Thread.Sleep(1000); // Sleep for 10 seconds
+        Thread.Sleep(1000); // Sleep for 1 seconds
 
-        // Read file and send line by line
         if (System.IO.File.Exists(filePath))
         {
             foreach (var line in System.IO.File.ReadLines(filePath))
@@ -115,7 +112,7 @@ public class MQTT_Functions
 
                 await client.PublishAsync(lineMessage);
                 Debug.WriteLine($"Published line: {line}");
-                // await Task.Delay(5); // Optional delay to prevent flooding
+                // await Task.Delay(5); // Optional delay
             }
         }
         else
@@ -124,7 +121,6 @@ public class MQTT_Functions
             return;
         }
 
-        // Send EOF to indicate the end of the file
         var eofMessage = new MqttApplicationMessageBuilder()
             .WithTopic("desktop/data")
             .WithPayload("End of File")
