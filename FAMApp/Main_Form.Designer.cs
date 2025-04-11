@@ -58,6 +58,7 @@ namespace FAMApp
             cSVToCloudToolStripMenuItem = new ToolStripMenuItem();
             clearAPIButton = new ToolStripButton();
             Center = new ToolStripButton();
+            moonPhaseToolStripMenuItem = new ToolStripMenuItem();
             toolStrip1.SuspendLayout();
             SuspendLayout();
             // 
@@ -104,7 +105,7 @@ namespace FAMApp
             // 
             // geomagnetAPIToolStripMenuItem
             // 
-            geomagnetAPIToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { geomagneticStormsToolStripMenuItem, temperatureToolStripMenuItem, humidityToolStripMenuItem, sWIRRLElectricFieldToolStripMenuItem, treeRhythmsToolStripMenuItem, solarIndexToolStripMenuItem, pressureToolStripMenuItem, samsungWatchToolStripMenuItem });
+            geomagnetAPIToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { geomagneticStormsToolStripMenuItem, temperatureToolStripMenuItem, humidityToolStripMenuItem, sWIRRLElectricFieldToolStripMenuItem, treeRhythmsToolStripMenuItem, solarIndexToolStripMenuItem, pressureToolStripMenuItem, samsungWatchToolStripMenuItem, moonPhaseToolStripMenuItem });
             geomagnetAPIToolStripMenuItem.Name = "geomagnetAPIToolStripMenuItem";
             geomagnetAPIToolStripMenuItem.Size = new Size(180, 22);
             geomagnetAPIToolStripMenuItem.Text = "APIs";
@@ -234,6 +235,12 @@ namespace FAMApp
             Center.Text = "Center";
             Center.Click += centerButton_Click;
             // 
+            // moonPhaseToolStripMenuItem
+            // 
+            moonPhaseToolStripMenuItem.Name = "moonPhaseToolStripMenuItem";
+            moonPhaseToolStripMenuItem.Size = new Size(185, 22);
+            moonPhaseToolStripMenuItem.Text = "Moon Phase";
+            // 
             // Main_Form
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -293,5 +300,6 @@ namespace FAMApp
         private ToolStripMenuItem cSVToCloudToolStripMenuItem;
         private ToolStripButton clearAPIButton;
         private ToolStripButton Center;
+        private ToolStripMenuItem moonPhaseToolStripMenuItem;
     }
 }
