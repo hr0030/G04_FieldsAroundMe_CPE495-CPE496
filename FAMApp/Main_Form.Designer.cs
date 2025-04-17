@@ -45,11 +45,11 @@ namespace FAMApp
             geomagneticStormsToolStripMenuItem = new ToolStripMenuItem();
             temperatureToolStripMenuItem = new ToolStripMenuItem();
             humidityToolStripMenuItem = new ToolStripMenuItem();
-            sWIRRLElectricFieldToolStripMenuItem = new ToolStripMenuItem();
             treeRhythmsToolStripMenuItem = new ToolStripMenuItem();
             solarIndexToolStripMenuItem = new ToolStripMenuItem();
             pressureToolStripMenuItem = new ToolStripMenuItem();
             samsungWatchToolStripMenuItem = new ToolStripMenuItem();
+            moonPhaseToolStripMenuItem = new ToolStripMenuItem();
             Settings_Button = new ToolStripButton();
             toolStripDropDownUpload = new ToolStripDropDownButton();
             settingsToolStripMenuItem = new ToolStripMenuItem();
@@ -58,7 +58,8 @@ namespace FAMApp
             cSVToCloudToolStripMenuItem = new ToolStripMenuItem();
             clearAPIButton = new ToolStripButton();
             Center = new ToolStripButton();
-            moonPhaseToolStripMenuItem = new ToolStripMenuItem();
+            solarFlareToolStripMenuItem = new ToolStripMenuItem();
+            sunsetSunriseToolStripMenuItem = new ToolStripMenuItem();
             toolStrip1.SuspendLayout();
             SuspendLayout();
             // 
@@ -105,7 +106,7 @@ namespace FAMApp
             // 
             // geomagnetAPIToolStripMenuItem
             // 
-            geomagnetAPIToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { geomagneticStormsToolStripMenuItem, temperatureToolStripMenuItem, humidityToolStripMenuItem, sWIRRLElectricFieldToolStripMenuItem, treeRhythmsToolStripMenuItem, solarIndexToolStripMenuItem, pressureToolStripMenuItem, samsungWatchToolStripMenuItem, moonPhaseToolStripMenuItem });
+            geomagnetAPIToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { geomagneticStormsToolStripMenuItem, solarFlareToolStripMenuItem, temperatureToolStripMenuItem, humidityToolStripMenuItem, treeRhythmsToolStripMenuItem, solarIndexToolStripMenuItem, pressureToolStripMenuItem, samsungWatchToolStripMenuItem, moonPhaseToolStripMenuItem, sunsetSunriseToolStripMenuItem });
             geomagnetAPIToolStripMenuItem.Name = "geomagnetAPIToolStripMenuItem";
             geomagnetAPIToolStripMenuItem.Size = new Size(180, 22);
             geomagnetAPIToolStripMenuItem.Text = "APIs";
@@ -130,13 +131,6 @@ namespace FAMApp
             humidityToolStripMenuItem.Size = new Size(185, 22);
             humidityToolStripMenuItem.Text = "Humidity";
             humidityToolStripMenuItem.Click += Humidity_API_Click;
-            // 
-            // sWIRRLElectricFieldToolStripMenuItem
-            // 
-            sWIRRLElectricFieldToolStripMenuItem.Name = "sWIRRLElectricFieldToolStripMenuItem";
-            sWIRRLElectricFieldToolStripMenuItem.Size = new Size(185, 22);
-            sWIRRLElectricFieldToolStripMenuItem.Text = "SWIRRL Electric Field";
-            sWIRRLElectricFieldToolStripMenuItem.Click += SWIRRL_API_Click;
             // 
             // treeRhythmsToolStripMenuItem
             // 
@@ -165,6 +159,13 @@ namespace FAMApp
             samsungWatchToolStripMenuItem.Size = new Size(185, 22);
             samsungWatchToolStripMenuItem.Text = "Samsung Watch";
             samsungWatchToolStripMenuItem.Click += Samsung_Watch_API_Click;
+            // 
+            // moonPhaseToolStripMenuItem
+            // 
+            moonPhaseToolStripMenuItem.Name = "moonPhaseToolStripMenuItem";
+            moonPhaseToolStripMenuItem.Size = new Size(185, 22);
+            moonPhaseToolStripMenuItem.Text = "Moon Phase";
+            moonPhaseToolStripMenuItem.Click += Moon_Phase_Click;
             // 
             // Settings_Button
             // 
@@ -235,11 +236,19 @@ namespace FAMApp
             Center.Text = "Center";
             Center.Click += centerButton_Click;
             // 
-            // moonPhaseToolStripMenuItem
+            // solarFlareToolStripMenuItem
             // 
-            moonPhaseToolStripMenuItem.Name = "moonPhaseToolStripMenuItem";
-            moonPhaseToolStripMenuItem.Size = new Size(185, 22);
-            moonPhaseToolStripMenuItem.Text = "Moon Phase";
+            solarFlareToolStripMenuItem.Name = "solarFlareToolStripMenuItem";
+            solarFlareToolStripMenuItem.Size = new Size(185, 22);
+            solarFlareToolStripMenuItem.Text = "Solar Flare";
+            solarFlareToolStripMenuItem.Click += solarFlareAPI_Click;
+            // 
+            // sunsetSunriseToolStripMenuItem
+            // 
+            sunsetSunriseToolStripMenuItem.Name = "sunsetSunriseToolStripMenuItem";
+            sunsetSunriseToolStripMenuItem.Size = new Size(185, 22);
+            sunsetSunriseToolStripMenuItem.Text = "Sunset/Sunrise";
+            sunsetSunriseToolStripMenuItem.Click += Sun_Rise_Set_API_Click;
             // 
             // Main_Form
             // 
@@ -287,7 +296,6 @@ namespace FAMApp
         private ToolStripMenuItem geomagneticStormsToolStripMenuItem;
         private ToolStripMenuItem temperatureToolStripMenuItem;
         private ToolStripMenuItem humidityToolStripMenuItem;
-        private ToolStripMenuItem sWIRRLElectricFieldToolStripMenuItem;
         private ToolStripButton Settings_Button;
         private ToolStripMenuItem treeRhythmsToolStripMenuItem;
         private ToolStripDropDownButton toolStripDropDownUpload;
@@ -301,5 +309,7 @@ namespace FAMApp
         private ToolStripButton clearAPIButton;
         private ToolStripButton Center;
         private ToolStripMenuItem moonPhaseToolStripMenuItem;
+        private ToolStripMenuItem solarFlareToolStripMenuItem;
+        private ToolStripMenuItem sunsetSunriseToolStripMenuItem;
     }
 }

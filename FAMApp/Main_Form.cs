@@ -23,6 +23,7 @@ using static Parse_Graph_Functions;
 using static Popup_Functions;
 using static MQTT_Functions;
 using static Cloud_Functions;
+using System.Globalization;
 
 namespace FAMApp
 {
@@ -131,6 +132,39 @@ namespace FAMApp
             getAPIGeneral("BPM", "api/data", "fetch_samsung_watch");
         }
 
+        private void solarFlareAPI_Click(object sender, EventArgs e)
+        {
+            getAPIGeneral("Temperature(C)", "api/data", "fetch_temperature_api"); // Fix This
+        }
+
+        private void Moon_Phase_Click(object sender, EventArgs e)
+        {
+            API_Plot.Plot.Clear();
+            parse_graph.API_Dates.Clear();
+            parse_graph.API_Magnitude.Clear();
+            string selectedDate = popups.ShowDoubleDatePickerDialog();
+            Debug.WriteLine(selectedDate);
+            var parts = selectedDate.Split(',');
+
+            if (parts.Length == 2 &&
+    DateTime.TryParseExact(parts[0], "yyyy_MM_dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime startDate) &&
+    DateTime.TryParseExact(parts[1], "yyyy_MM_dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime endDate))
+
+                {
+                    popups.spawnAPIPopup("Moon Phase(Percent)");
+                    parse_graph.GenerateMoonPhaseData(startDate, endDate);
+                }
+                else
+                {
+                    MessageBox.Show("Error: Problem with Selected Date", "Date Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+        }
+
+        private void Sun_Rise_Set_API_Click(object sender, EventArgs e)
+        {
+            getAPIGeneral("Time", "api/data", "fetch_sun_times");
+        }
+
         private void getAPIGeneral(string yAxisLabel, string subscriberTopic, string commandPayload)
         {
             SettingsLoader.LoadSettings(); // Load the settings
@@ -139,7 +173,7 @@ namespace FAMApp
             parse_graph.API_Dates.Clear();
             parse_graph.API_Magnitude.Clear();
 
-            
+
             string ipAddress = GlobalSettings.ServerIP; // Get the IP address from settings
 
             if (!string.IsNullOrEmpty(ipAddress))
@@ -173,7 +207,7 @@ namespace FAMApp
             SettingsLoader.LoadSettings(); // Load the settings
 
             string ipAddress = GlobalSettings.ServerIP; // Get the IP address from settings
-            if (!string.IsNullOrEmpty(ipAddress)) 
+            if (!string.IsNullOrEmpty(ipAddress))
             {
                 mqtt.MqttReceiver(ipAddress, "sensor/data", "live");
                 _ = mqtt.StartAsync();
@@ -186,7 +220,7 @@ namespace FAMApp
 
         // This Function is used to graph .CSVs downloaded to the Computer. 
         // Simply opens file explorer window and passes file to LoadDataFromCSV function 
-         
+
         private void microSDToolStripMenuItem_Click(object sender, EventArgs e)
         {
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
@@ -328,7 +362,7 @@ namespace FAMApp
             }
         }
 
-        
+
         // Centers Graph when button is pressed.
 
         private void centerButton_Click(object sender, EventArgs e)
@@ -345,6 +379,7 @@ namespace FAMApp
             parse_graph.ClearAPIOverlay();
         }
 
+   
     }
 }
 

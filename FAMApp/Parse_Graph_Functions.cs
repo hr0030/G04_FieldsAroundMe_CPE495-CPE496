@@ -2,7 +2,8 @@
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Diagnostics;
 using ScottPlot.WinForms;
-
+using FAMApp;
+using static Moon_Phase_Calculator;
 public class Parse_Graph_Functions 
 {
 
@@ -357,6 +358,28 @@ public class Parse_Graph_Functions
             MessageBox.Show($"Error removing API overlay: {ex.Message}");
         }
     }
+
+
+    public void GenerateMoonPhaseData(DateTime startDate, DateTime endDate)
+    {
+        API_Dates.Clear();
+        API_Magnitude.Clear();
+
+        for (DateTime date = startDate.Date; date <= endDate.Date; date = date.AddDays(1))
+        {
+            MoonPhaseData data = Moon_Phase_Calculator.Calculate(date);
+
+            API_Dates.Add(date);
+            API_Magnitude.Add(data.Illumination); // or data.Phase or data.Age, depending on graph
+
+            // Optional: Log more details
+            Console.WriteLine($"{date.ToShortDateString()} - {data.PhaseName} ({data.ZodiacName}) - Age: {data.Age:F2} days - Illumination: {data.Illumination:P0}");
+        }
+
+        PlotLollipopData(API_Dates, API_Magnitude);
+    }
+
+
 
 
 }
