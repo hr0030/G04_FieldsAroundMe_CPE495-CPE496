@@ -43,6 +43,7 @@ namespace FAMApp
             InitializeComponent();
             InitializeChart();
             InitializeNewAPIPlot();
+            sensorSelectionComboBox.SelectedIndex = 0;
             parse_graph = new Parse_Graph_Functions(Main_Plot, API_Plot);
             popups = new Popup_Functions(Main_Plot, API_Plot, parse_graph);
             mqtt = new MQTT_Functions(parse_graph);
@@ -84,14 +85,38 @@ namespace FAMApp
 
         private void cloudToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            string selectedDate = popups.ShowSingleDatePickerDialog();
-            if (string.IsNullOrEmpty(selectedDate))
+            string selectedSensor = sensorSelectionComboBox.SelectedItem?.ToString();
+            string returnDateString = popups.ShowDoubleDatePickerDialog();
+            if (string.IsNullOrEmpty(returnDateString))
             {
-                MessageBox.Show("No date selected. Operation canceled.");
-                return; // Exit function if no date is selected
+                MessageBox.Show("No date range selected. Operation canceled.");
+                return; // Exit if user cancels
             }
-            DownloadFileFromGoogleDrive($"{selectedDate}.csv", "./");
-            parse_graph.LoadDataFromCsv($"{selectedDate}.csv");
+
+            string[] dateRange = returnDateString.Split(',');
+            if (dateRange.Length != 2)
+            {
+                MessageBox.Show("Invalid date range format.");
+                return;
+            }
+
+            string startDate = dateRange[0];
+            string endDate = dateRange[1];
+
+            // Optional: Convert to DateTime objects if you want to validate or loop
+            DateTime start = DateTime.ParseExact(startDate, "yyyy_MM_dd", null);
+            DateTime end = DateTime.ParseExact(endDate, "yyyy_MM_dd", null);
+
+            // Loop through each date in the range
+            for (DateTime date = start; date <= end; date = date.AddDays(1))
+            {
+                string dateString = date.ToString("yyyy_MM_dd");
+                string fileName = $"{selectedSensor}_{dateString}.csv";
+
+                DownloadFileFromGoogleDrive(fileName, "./");
+                parse_graph.LoadDataFromCsv(fileName);
+            }
+
         }
 
         private void geomagneticStormsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -137,6 +162,21 @@ namespace FAMApp
             getAPIGeneral("Temperature(C)", "api/data", "fetch_temperature_api"); // Fix This
         }
 
+        private void oura_Ring_HR_Reserve_Click(object sender, EventArgs e)
+        {
+            getHealthAPIGeneral("Heart Rate Reservse", "fetch_oura_ring,2");
+        }
+
+        private void oura_Ring_RR_Click(object sender, EventArgs e)
+        {
+            getHealthAPIGeneral("RR", "fetch_oura_ring,3");
+        }
+
+        private void oura_Ring_Click(object sender, EventArgs e)
+        {
+            getHealthAPIGeneral("Heart Rate Variability", "fetch_oura_ring,4");
+        }
+
         private void Moon_Phase_Click(object sender, EventArgs e)
         {
             API_Plot.Plot.Clear();
@@ -150,20 +190,53 @@ namespace FAMApp
     DateTime.TryParseExact(parts[0], "yyyy_MM_dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime startDate) &&
     DateTime.TryParseExact(parts[1], "yyyy_MM_dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime endDate))
 
-                {
-                    popups.spawnAPIPopup("Moon Phase(Percent)");
-                    parse_graph.GenerateMoonPhaseData(startDate, endDate);
-                }
-                else
-                {
-                    MessageBox.Show("Error: Problem with Selected Date", "Date Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+            {
+                popups.spawnAPIPopup("Moon Phase(Percent)");
+                parse_graph.GenerateMoonPhaseData(startDate, endDate);
+            }
+            else
+            {
+                MessageBox.Show("Error: Problem with Selected Date", "Date Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void Sun_Rise_Set_API_Click(object sender, EventArgs e)
         {
             getAPIGeneral("Time", "api/data", "fetch_sun_times");
         }
+
+        private void getHealthAPIGeneral(string yAxisLabel, string commandPayload)
+        {
+            SettingsLoader.LoadSettings(); // Load the settings
+
+            API_Plot.Plot.Clear();
+            parse_graph.API_Dates.Clear();
+            parse_graph.API_Magnitude.Clear();
+
+
+            string ipAddress = GlobalSettings.ServerIP; // Get the IP address from settings
+
+            if (!string.IsNullOrEmpty(ipAddress))
+            {
+                bool login = spawnLoginPopup();
+                if (login)
+                {
+                    popups.spawnAPIPopup(yAxisLabel);
+                    mqtt.MqttReceiver(ipAddress, "api/data", commandPayload);
+                    _ = mqtt.StartAsync();
+                }
+                else
+                {
+                    MessageBox.Show("Error: Incorrect Login Information", "Login Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            else
+            {
+                MessageBox.Show("IP Address is not configured.");
+            }
+        }
+
+
 
         private void getAPIGeneral(string yAxisLabel, string subscriberTopic, string commandPayload)
         {
@@ -205,11 +278,11 @@ namespace FAMApp
         private void wifiToolStripMenuItem_Click(object sender, EventArgs e)
         {
             SettingsLoader.LoadSettings(); // Load the settings
-
+            string selectedSensor = sensorSelectionComboBox.SelectedItem?.ToString();
             string ipAddress = GlobalSettings.ServerIP; // Get the IP address from settings
             if (!string.IsNullOrEmpty(ipAddress))
             {
-                mqtt.MqttReceiver(ipAddress, "sensor/data", "live");
+                mqtt.MqttReceiver(ipAddress, "sensor/data", $"live,{selectedSensor}");
                 _ = mqtt.StartAsync();
             }
             else
@@ -379,7 +452,11 @@ namespace FAMApp
             parse_graph.ClearAPIOverlay();
         }
 
-   
+        private void ouraRingUpload_Click(object sender, EventArgs e)
+        {
+            genericUploadFunction("oura_ring_upload");
+        }
+
     }
 }
 

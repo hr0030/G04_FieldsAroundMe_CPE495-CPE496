@@ -154,5 +154,51 @@ public class Popup_Functions
         popOutForm.Show();
     }
 
+    public static bool spawnLoginPopup()
+    {
+        // Create form
+        Form loginForm = new Form()
+        {
+            Width = 300,
+            Height = 200,
+            Text = "Login",
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            StartPosition = FormStartPosition.CenterScreen,
+            MinimizeBox = false,
+            MaximizeBox = false
+        };
+
+        // Username label and textbox
+        Label userLabel = new Label() { Left = 20, Top = 20, Text = "Username" };
+        TextBox userBox = new TextBox() { Left = 100, Top = 20, Width = 150 };
+
+        // Password label and textbox
+        Label passLabel = new Label() { Left = 20, Top = 60, Text = "Password" };
+        TextBox passBox = new TextBox() { Left = 100, Top = 60, Width = 150, UseSystemPasswordChar = true };
+
+        // OK button
+        Button okButton = new Button() { Text = "Login", Left = 100, Width = 80, Top = 100, DialogResult = DialogResult.OK };
+        loginForm.AcceptButton = okButton;
+
+        // Add controls
+        loginForm.Controls.Add(userLabel);
+        loginForm.Controls.Add(userBox);
+        loginForm.Controls.Add(passLabel);
+        loginForm.Controls.Add(passBox);
+        loginForm.Controls.Add(okButton);
+
+        // Show dialog
+        if (loginForm.ShowDialog() == DialogResult.OK)
+        {
+            string username = userBox.Text;
+            string password = passBox.Text;
+
+            if (username == "admin" && password == "password")
+                return true;
+        }
+
+        return false;
+    }
+
 
 }
