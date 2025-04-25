@@ -9,15 +9,19 @@ import time
 from datetime import datetime, timedelta
 import google_drive_and_networking_functions
 
+csv_file_name = {}
 # Initialize CSV file with the current date
-def create_new_csv():
-    global current_date, csv_file_name
+def create_new_csv(sensor_name):
+    global csv_file_names
     current_date = datetime.now().strftime("%Y_%m_%d")
-    csv_file_name = f"{current_date}.csv"
-    with open(csv_file_name, mode='w', newline='') as file:
+    file_name = f"{sensor_name}_{current_date}.csv"
+    
+    with open(file_name, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(["Timestamp", "Voltage_mV"])
-    print(f"New CSV file created: {csv_file_name}")
+
+    csv_file_names[sensor_name] = file_name
+    print(f"New CSV file created: {file_name}")
 
 
     # Periodically check for date change
@@ -26,11 +30,15 @@ def monitor_date_change():
     while True:
         new_date = datetime.now().strftime("%Y_%m_%d")
         if new_date != current_date:
-            print(f"Date changed from {current_date} to {new_date}. Uploading {csv_file_name} to Google Drive.")
+            
+            for sensor_name, file_name in csv_file_names.items():
+                print(f"Uploading {file_name}")
+                google_drive_and_networking_functions.google_drive_upload(file_name)
 
-            google_drive_and_networking_functions.google_drive_upload(csv_file_name)  # Upload the old file before switching
 
-            create_new_csv()  # Create a new file for the new day
+            create_new_csv("S1") 
+            create_new_csv("S2")  
+            create_new_csv("S3")  
 
         time.sleep(60)  # Check every minute
 
@@ -45,7 +53,10 @@ print(f"Device IP Address: {ip_address}")
 
 # MQTT setup
 broker = "localhost"
-esp32_topic = "esp32/sensor/data"  # Topic the ESP32 publishes to
+current_sensor = "S1"
+esp32_sensor_1_topic = "esp32/sensor/data/S1"  # Topic the ESP32 publishes to
+esp32_sensor_2_topic = "esp32/sensor/data/S2"  # Topic the ESP32 publishes to
+esp32_sensor_3_topic = "esp32/sensor/data/S3"  # Topic the ESP32 publishes to
 esp32_settings_topic = "esp32/sensor/settings" # Topic settings are published to
 republish_topic = "sensor/data"  # Topic to republish to
 command_topic = "desktop/commands"  # Topic for receiving commands from the Fam_app
@@ -85,6 +96,7 @@ def on_message(client, userdata, msg):
 
             case "live":
                 print("Received 'live' command. Outputting today's CSV data.")
+                current_sensor = message_parsed[1]
                 # publish_csv_to_mqtt(csv_file_name, "sensor/data", 1)
 
             case "fetch_donki_gst":
@@ -142,20 +154,35 @@ def on_message(client, userdata, msg):
             case _:
                 print(f"Unknown command received: {message}")
 
-    elif msg.topic == esp32_topic:
+    elif msg.topic == esp32_sensor_1_topic:
+        
         # Write Data to CSV
-        # timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # formatted_message = f"{timestamp},{message}"
-
-        with open(csv_file_name, mode='a', newline='') as file:
+        with open(csv_file_name["S1"], mode='a', newline='') as file:
             writer = csv.writer(file)
-            # writer.writerow([timestamp, message])
             writer.writerow(message)
-            # print(f"Written to {csv_file_name}: {timestamp}, {message}")
+        if current_sensor == "S1"
+            # Republish the received data
+            client.publish(republish_topic, message)
 
-        # Republish the received data
-        client.publish(republish_topic, message)
-        # print(f"Republished to {republish_topic}: {formatted_message}")
+    elif msg.topic == esp32_sensor_2_topic:
+        
+        # Write Data to CSV
+        with open(csv_file_name["S2"], mode='a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(message)
+        if current_sensor == "S2"
+            # Republish the received data
+            client.publish(republish_topic, message)
+
+    elif msg.topic == esp32_sensor_3_topic:
+        
+        # Write Data to CSV
+        with open(csv_file_name["S3"], mode='a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(message)
+        if current_sensor == "S3"
+            # Republish the received data
+            client.publish(republish_topic, message)
 
 
 # Function to write messages from "desktop/data" to a file until "eof" is received
