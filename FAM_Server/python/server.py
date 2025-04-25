@@ -12,7 +12,7 @@ import google_drive_and_networking_functions
 csv_file_name = {}
 # Initialize CSV file with the current date
 def create_new_csv(sensor_name):
-    global csv_file_names
+    global csv_file_name
     current_date = datetime.now().strftime("%Y_%m_%d")
     file_name = f"{sensor_name}_{current_date}.csv"
     
@@ -20,7 +20,7 @@ def create_new_csv(sensor_name):
         writer = csv.writer(file)
         writer.writerow(["Timestamp", "Voltage_mV"])
 
-    csv_file_names[sensor_name] = file_name
+    csv_file_name[sensor_name] = file_name
     print(f"New CSV file created: {file_name}")
 
 
