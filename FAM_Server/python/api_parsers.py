@@ -58,10 +58,14 @@ def fetch_and_save_donki_gst_data(start_date, end_date):
 
 def fetch_and_save_temperature_api(start_date, end_date):
             try:
+                # Correctly Format Timestamp
+                start_date = start_date.replace('_', '-')
+                end_date = end_date.replace('_', '-')
+
                 api_endpoint = "https://www.ncdc.noaa.gov/cdo-web/api/v2/data"
-                api_key = "gcYwsQlKpUDOdqvTjKeflLqCAcuGyHdl"  # Replace with your NOAA API key
+                api_key = "gcYwsQlKpUDOdqvTjKeflLqCAcuGyHdl"  # NOAA API Key(Probably Should Not be on public github)
                 dataset_id = "GHCND"  # Global Historical Climatology Network Daily
-                station_id = "GHCND:USW00003856"  # Example: Alabama, change as needed
+                station_id = "GHCND:USW00003856"  #Huntsville Airport ID
                 # start_date = "2025-01-01"
                 # end_date = datetime.now().strftime('%Y-%m-%d')
                 datatype_id = "TAVG"  # Average temperature
