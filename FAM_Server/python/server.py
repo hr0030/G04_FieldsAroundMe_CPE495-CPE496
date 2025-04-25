@@ -1,4 +1,4 @@
-import os
+soimport os
 import paho.mqtt.client as mqtt
 import threading
 import api_parsers
@@ -263,7 +263,9 @@ def publish_csv_to_mqtt(file_name, mqtt_topic, column_number):
 client = mqtt.Client()
 client.on_message = on_message
 client.connect(broker)
-client.subscribe(esp32_topic)
+client.subscribe(esp32_sensor_1_topic)
+client.subscribe(esp32_sensor_2_topic)
+client.subscribe(esp32_sensor_3_topic)
 client.subscribe(command_topic)
 
 print("MQTT Client started. Listening for messages...")
