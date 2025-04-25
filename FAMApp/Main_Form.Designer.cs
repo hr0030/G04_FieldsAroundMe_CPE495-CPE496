@@ -65,13 +65,14 @@ namespace FAMApp
             clearAPIButton = new ToolStripButton();
             Center = new ToolStripButton();
             sensorSelectionComboBox = new ToolStripComboBox();
+            clearAllButton = new ToolStripButton();
             toolStrip1.SuspendLayout();
             SuspendLayout();
             // 
             // toolStrip1
             // 
             toolStrip1.ImageScalingSize = new Size(20, 20);
-            toolStrip1.Items.AddRange(new ToolStripItem[] { sourceButton1, Settings_Button, toolStripDropDownUpload, clearAPIButton, Center, sensorSelectionComboBox });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { sourceButton1, Settings_Button, toolStripDropDownUpload, clearAPIButton, clearAllButton, Center, sensorSelectionComboBox });
             toolStrip1.Location = new Point(0, 0);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(800, 25);
@@ -230,35 +231,35 @@ namespace FAMApp
             // settingsToolStripMenuItem
             // 
             settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            settingsToolStripMenuItem.Size = new Size(180, 22);
+            settingsToolStripMenuItem.Size = new Size(146, 22);
             settingsToolStripMenuItem.Text = "Settings";
             settingsToolStripMenuItem.Click += settingsToolStripMenuItem_Click;
             // 
             // treeRhythmsToolStripMenuItem1
             // 
             treeRhythmsToolStripMenuItem1.Name = "treeRhythmsToolStripMenuItem1";
-            treeRhythmsToolStripMenuItem1.Size = new Size(180, 22);
+            treeRhythmsToolStripMenuItem1.Size = new Size(146, 22);
             treeRhythmsToolStripMenuItem1.Text = "Tree Rhythms";
             treeRhythmsToolStripMenuItem1.Click += treeRhythmsUpload_Click;
             // 
             // uAHSWIRLLToolStripMenuItem
             // 
             uAHSWIRLLToolStripMenuItem.Name = "uAHSWIRLLToolStripMenuItem";
-            uAHSWIRLLToolStripMenuItem.Size = new Size(180, 22);
+            uAHSWIRLLToolStripMenuItem.Size = new Size(146, 22);
             uAHSWIRLLToolStripMenuItem.Text = "UAH SWIRLL";
             uAHSWIRLLToolStripMenuItem.Click += UAH_SWIRLL_Upload_Click;
             // 
             // cSVToCloudToolStripMenuItem
             // 
             cSVToCloudToolStripMenuItem.Name = "cSVToCloudToolStripMenuItem";
-            cSVToCloudToolStripMenuItem.Size = new Size(180, 22);
+            cSVToCloudToolStripMenuItem.Size = new Size(146, 22);
             cSVToCloudToolStripMenuItem.Text = "CSV to Cloud";
             cSVToCloudToolStripMenuItem.Click += Upload_CSV_Cloud_Click;
             // 
             // ouraRingToolStripMenuItem1
             // 
             ouraRingToolStripMenuItem1.Name = "ouraRingToolStripMenuItem1";
-            ouraRingToolStripMenuItem1.Size = new Size(180, 22);
+            ouraRingToolStripMenuItem1.Size = new Size(146, 22);
             ouraRingToolStripMenuItem1.Text = "Oura Ring";
             ouraRingToolStripMenuItem1.Click += ouraRingUpload_Click;
             // 
@@ -290,6 +291,17 @@ namespace FAMApp
             sensorSelectionComboBox.Name = "sensorSelectionComboBox";
             sensorSelectionComboBox.Size = new Size(121, 25);
             sensorSelectionComboBox.ToolTipText = "Select your Desired Sensor";
+            // 
+            // clearAllButton
+            // 
+            clearAllButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            clearAllButton.Image = (Image)resources.GetObject("clearAllButton.Image");
+            clearAllButton.ImageTransparentColor = Color.Magenta;
+            clearAllButton.Name = "clearAllButton";
+            clearAllButton.Size = new Size(55, 22);
+            clearAllButton.Text = "Clear All";
+            clearAllButton.ToolTipText = "Clear All Data on Current Graph";
+            clearAllButton.Click += clearAllButton_Click;
             // 
             // Main_Form
             // 
@@ -357,5 +369,6 @@ namespace FAMApp
         private ToolStripMenuItem hRVToolStripMenuItem;
         private ToolStripMenuItem ouraRingToolStripMenuItem1;
         private ToolStripComboBox sensorSelectionComboBox;
+        private ToolStripButton clearAllButton;
     }
 }

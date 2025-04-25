@@ -457,6 +457,10 @@ namespace FAMApp
             genericUploadFunction("oura_ring_upload");
         }
 
+        private void clearAllButton_Click(object sender, EventArgs e)
+        {
+            parse_graph.ClearAllData();
+        }
     }
 }
 

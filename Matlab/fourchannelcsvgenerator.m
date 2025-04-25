@@ -1,7 +1,7 @@
 % Parameters
 % startDateTime = datetime; % Start date and time
 % startDateTime.Format = "yyyy-MM-dd HH:mm:ss";
-startDateTime = datetime("2025-04-01 00:00:00", "InputFormat", "yyyy-MM-dd HH:mm:ss");
+startDateTime = datetime("2025-04-15 00:00:00", "InputFormat", "yyyy-MM-dd HH:mm:ss");
 startDateTime.Format = "yyyy-MM-dd HH:mm:ss";  % Optional: for display
 
 numPoints = 17280; % Number of data points
@@ -25,7 +25,7 @@ sineWave = amplitude * sin(2 * pi * frequency * (0:(1/samplingRate):(numPoints-1
 data = table(timeVector', channelNumbers', sineWave', 'VariableNames', {'Timestamp', 'Channel', 'Voltage_mV'});
 
 % Write to CSV
-filename = 'April_1_2_final_2_mock.csv';
+filename = 'April_1_2_final_415_mock.csv';
 writetable(data, filename);
 
 disp(['Data saved to ' filename]);

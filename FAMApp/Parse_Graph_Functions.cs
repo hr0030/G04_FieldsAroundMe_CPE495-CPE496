@@ -23,13 +23,13 @@ public class Parse_Graph_Functions
 
     public void LoadDataFromCsv(string filePath)
     {
-        var voltagesByChannel = new Dictionary<int, List<double>>
+        /* var voltagesByChannel = new Dictionary<int, List<double>>
 {
     { 1, new List<double>() },
     { 2, new List<double>() },
     { 3, new List<double>() },
     { 4, new List<double>() }
-};
+}; */
 
         try
         {
@@ -52,6 +52,11 @@ public class Parse_Graph_Functions
                         if (!_Dates.ContainsKey(channel))
                         {
                             _Dates[channel] = new List<DateTime>();
+                        }
+
+                        if (!voltagesByChannel.ContainsKey(channel))
+                        {
+                            voltagesByChannel[channel] = new List<double>();
                         }
 
                         _Dates[channel].Add(dateTime);
@@ -358,6 +363,24 @@ public class Parse_Graph_Functions
             MessageBox.Show($"Error removing API overlay: {ex.Message}");
         }
     }
+
+    public void ClearAllData()
+    {
+        try
+        {
+            Main_Plot.Plot.Clear(); 
+            Main_Plot.Plot.Axes.AutoScale(); 
+            Main_Plot.Refresh();
+
+            voltagesByChannel.Clear(); // Clear voltage data
+            _Dates.Clear(); // Clear timestamp data
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error clearing plot: {ex.Message}");
+        }
+    }
+
 
 
     public void GenerateMoonPhaseData(DateTime startDate, DateTime endDate)
