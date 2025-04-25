@@ -137,6 +137,11 @@ def on_message(client, userdata, msg):
                 print("Received 'fetch_sunset_time' command. Writing to 'api/data'")
                 api_parsers.fetch_and_save_sunset_api()
 
+            case "fetch_oura":
+                print("Received 'fetch_oura' command. Writing to 'api/data'")
+                publish_csv_to_mqtt(f"APIs/oura_ring.csv", "api/data", message_parse[1])
+            
+
             case "settings_upload":
                 print("Received 'settings_upload' command. Writing to file.")
                 open("Settings/settings.json", "w").close()
@@ -150,6 +155,10 @@ def on_message(client, userdata, msg):
             case "uah_swirll_upload":
                 print("Received 'uah_swirll_upload' command. Writing to file.")
                 write_mqtt_to_file(f"APIs/SWIRLL/{message_parsed[1]}_UAH_Swirll.csv", "UAH_SWIRLL")
+
+            case "oura_ring_upload":
+                print("Received 'oura_ring_upload' command. Writing to file.")
+                write_mqtt_to_file(f"APIs/Oura_Ring.csv", "oura_ring")
 
             case _:
                 print(f"Unknown command received: {message}")
