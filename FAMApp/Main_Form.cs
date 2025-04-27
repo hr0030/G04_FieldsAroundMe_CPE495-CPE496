@@ -255,10 +255,18 @@ namespace FAMApp
                 if (selectedDate != null)
                 {
                     string updatedCommandPayload = $"{commandPayload},{selectedDate}";
-                    popups.spawnAPIPopup(yAxisLabel);
-                    mqtt.MqttReceiver(ipAddress, subscriberTopic, updatedCommandPayload);
+                    bool login = spawnLoginPopup();
+                    if (login)
+                    {
+                        popups.spawnAPIPopup(yAxisLabel);
+                        mqtt.MqttReceiver(ipAddress, subscriberTopic, updatedCommandPayload);
 
-                    _ = mqtt.StartAsync();
+                        _ = mqtt.StartAsync();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Error: Incorrect Login Information", "Login Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }
                 else
                 {
@@ -464,12 +472,18 @@ namespace FAMApp
         }
 
 
-        
+
 
         private async void stopListeningLiveButton_Click(object sender, EventArgs e)
         {
             await mqtt.ToggleLiveSubscription(stopListeningLiveButton);
         }
+
+        private void samsungHRUpload_Click(object sender, EventArgs e)
+        {
+            genericUploadFunction("samsung_hr_upload");
+        }
+
 
     }
 }

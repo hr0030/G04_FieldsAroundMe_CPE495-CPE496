@@ -67,6 +67,7 @@ namespace FAMApp
             Center = new ToolStripButton();
             sensorSelectionComboBox = new ToolStripComboBox();
             stopListeningLiveButton = new ToolStripButton();
+            samsungHRUpload = new ToolStripMenuItem();
             toolStrip1.SuspendLayout();
             SuspendLayout();
             // 
@@ -222,7 +223,7 @@ namespace FAMApp
             // toolStripDropDownUpload
             // 
             toolStripDropDownUpload.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            toolStripDropDownUpload.DropDownItems.AddRange(new ToolStripItem[] { settingsToolStripMenuItem, treeRhythmsToolStripMenuItem1, uAHSWIRLLToolStripMenuItem, cSVToCloudToolStripMenuItem, ouraRingToolStripMenuItem1 });
+            toolStripDropDownUpload.DropDownItems.AddRange(new ToolStripItem[] { settingsToolStripMenuItem, treeRhythmsToolStripMenuItem1, uAHSWIRLLToolStripMenuItem, cSVToCloudToolStripMenuItem, ouraRingToolStripMenuItem1, samsungHRUpload });
             toolStripDropDownUpload.Image = (Image)resources.GetObject("toolStripDropDownUpload.Image");
             toolStripDropDownUpload.ImageTransparentColor = Color.Magenta;
             toolStripDropDownUpload.Name = "toolStripDropDownUpload";
@@ -232,35 +233,35 @@ namespace FAMApp
             // settingsToolStripMenuItem
             // 
             settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            settingsToolStripMenuItem.Size = new Size(146, 22);
+            settingsToolStripMenuItem.Size = new Size(180, 22);
             settingsToolStripMenuItem.Text = "Settings";
             settingsToolStripMenuItem.Click += settingsToolStripMenuItem_Click;
             // 
             // treeRhythmsToolStripMenuItem1
             // 
             treeRhythmsToolStripMenuItem1.Name = "treeRhythmsToolStripMenuItem1";
-            treeRhythmsToolStripMenuItem1.Size = new Size(146, 22);
+            treeRhythmsToolStripMenuItem1.Size = new Size(180, 22);
             treeRhythmsToolStripMenuItem1.Text = "Tree Rhythms";
             treeRhythmsToolStripMenuItem1.Click += treeRhythmsUpload_Click;
             // 
             // uAHSWIRLLToolStripMenuItem
             // 
             uAHSWIRLLToolStripMenuItem.Name = "uAHSWIRLLToolStripMenuItem";
-            uAHSWIRLLToolStripMenuItem.Size = new Size(146, 22);
+            uAHSWIRLLToolStripMenuItem.Size = new Size(180, 22);
             uAHSWIRLLToolStripMenuItem.Text = "UAH SWIRLL";
             uAHSWIRLLToolStripMenuItem.Click += UAH_SWIRLL_Upload_Click;
             // 
             // cSVToCloudToolStripMenuItem
             // 
             cSVToCloudToolStripMenuItem.Name = "cSVToCloudToolStripMenuItem";
-            cSVToCloudToolStripMenuItem.Size = new Size(146, 22);
+            cSVToCloudToolStripMenuItem.Size = new Size(180, 22);
             cSVToCloudToolStripMenuItem.Text = "CSV to Cloud";
             cSVToCloudToolStripMenuItem.Click += Upload_CSV_Cloud_Click;
             // 
             // ouraRingToolStripMenuItem1
             // 
             ouraRingToolStripMenuItem1.Name = "ouraRingToolStripMenuItem1";
-            ouraRingToolStripMenuItem1.Size = new Size(146, 22);
+            ouraRingToolStripMenuItem1.Size = new Size(180, 22);
             ouraRingToolStripMenuItem1.Text = "Oura Ring";
             ouraRingToolStripMenuItem1.Click += ouraRingUpload_Click;
             // 
@@ -315,6 +316,13 @@ namespace FAMApp
             stopListeningLiveButton.Text = "Stop Live";
             stopListeningLiveButton.ToolTipText = "Stop Adding Additional Data Points to Live Graph";
             stopListeningLiveButton.Click += stopListeningLiveButton_Click;
+            // 
+            // samsungHRUpload
+            // 
+            samsungHRUpload.Name = "samsungHRUpload";
+            samsungHRUpload.Size = new Size(180, 22);
+            samsungHRUpload.Text = "Samsung HR";
+            samsungHRUpload.Click += samsungHRUpload_Click;
             // 
             // Main_Form
             // 
@@ -384,5 +392,6 @@ namespace FAMApp
         private ToolStripComboBox sensorSelectionComboBox;
         private ToolStripButton clearAllButton;
         private ToolStripButton stopListeningLiveButton;
+        private ToolStripMenuItem samsungHRUpload;
     }
 }

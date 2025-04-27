@@ -159,7 +159,7 @@ public class Popup_Functions
         // Create form
         Form loginForm = new Form()
         {
-            Width = 300,
+            Width = 325,
             Height = 200,
             Text = "Login",
             FormBorderStyle = FormBorderStyle.FixedDialog,
@@ -170,11 +170,11 @@ public class Popup_Functions
 
         // Username label and textbox
         Label userLabel = new Label() { Left = 20, Top = 20, Text = "Username" };
-        TextBox userBox = new TextBox() { Left = 100, Top = 20, Width = 150 };
+        TextBox userBox = new TextBox() { Left = 125, Top = 20, Width = 150 };
 
         // Password label and textbox
         Label passLabel = new Label() { Left = 20, Top = 60, Text = "Password" };
-        TextBox passBox = new TextBox() { Left = 100, Top = 60, Width = 150, UseSystemPasswordChar = true };
+        TextBox passBox = new TextBox() { Left = 125, Top = 60, Width = 150, UseSystemPasswordChar = true };
 
         // OK button
         Button okButton = new Button() { Text = "Login", Left = 100, Width = 80, Top = 100, DialogResult = DialogResult.OK };
