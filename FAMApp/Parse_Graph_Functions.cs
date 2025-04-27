@@ -91,7 +91,6 @@ public class Parse_Graph_Functions
                         {
                             voltagesByChannel[channel] = new List<double>();
                         }
-
                         _Dates[channel].Add(dateTime);
                         voltagesByChannel[channel].Add(millivolts);
                     }
