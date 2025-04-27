@@ -146,10 +146,12 @@ public class Popup_Functions
             if (originalParent != null)
             {
                 originalParent.Controls.Add(API_Plot);
-                API_Plot.Dock = DockStyle.Fill; 
-                API_Plot.Refresh();
+                API_Plot.Plot.Clear(); 
+                API_Plot.Refresh();    
+                API_Plot.Dock = DockStyle.Fill;
             }
         };
+
 
         popOutForm.Show();
     }

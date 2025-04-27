@@ -3,6 +3,8 @@ using MQTTnet;
 using System.Diagnostics;
 using System.Text;
 using static Parse_Graph_Functions;
+using System.Threading.Channels;
+using MQTTnet.Protocol;
 public class MQTT_Functions
 {
     public IMqttClient _client;
@@ -10,19 +12,22 @@ public class MQTT_Functions
     private Parse_Graph_Functions parse_graph;
 
     private bool isLiveSubscribed = false; // Track state
+
+    private readonly Channel<string> messageChannel = Channel.CreateUnbounded<string>();
+    private CancellationTokenSource processingCts = new CancellationTokenSource();
+
     public MQTT_Functions(Parse_Graph_Functions parseGraph)
     {
         this.parse_graph = parseGraph;
     }
 
-        public void MqttReceiver(string ipAddress, string subscriberTopic, string commandPayload)
+    public async void MqttReceiver(string ipAddress, string subscriberTopic, string commandPayload)
     {
-
         var factory = new MqttFactory();
         _client = factory.CreateMqttClient();
 
         _options = new MqttClientOptionsBuilder()
-            .WithClientId("CSHarpClient")
+            .WithClientId("CSharpClient")
             .WithTcpServer(ipAddress)
             .Build();
 
@@ -30,7 +35,7 @@ public class MQTT_Functions
         {
             Debug.WriteLine("Connected to MQTT broker.");
 
-
+            // Publish the command
             var message = new MqttApplicationMessageBuilder()
                 .WithTopic("desktop/commands")
                 .WithPayload(commandPayload)
@@ -38,18 +43,13 @@ public class MQTT_Functions
 
             await _client.PublishAsync(message);
             Debug.WriteLine($"Published '{commandPayload}' to 'desktop/commands'.");
-            if (subscriberTopic == "Upload")
-            {
 
-            }
-
-            Thread.Sleep(500);
-            await _client.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic(subscriberTopic).Build());
+            // Subscribe
+            await _client.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic(subscriberTopic).WithQualityOfServiceLevel(MqttQualityOfServiceLevel.AtLeastOnce).Build());
             Debug.WriteLine($"Subscribed to topic '{subscriberTopic}'.");
 
-            if (!isLiveSubscribed)
+            if ((!isLiveSubscribed) && subscriberTopic.Contains("live"))
                 isLiveSubscribed = true;
-
         };
 
         _client.DisconnectedAsync += async e =>
@@ -59,30 +59,141 @@ public class MQTT_Functions
 
         _client.ApplicationMessageReceivedAsync += async e =>
         {
-            string payload = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
-            payload = payload.Trim();
-            Debug.WriteLine(payload);
+            try
+            {
+                string payload = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
+                payload = payload.Trim();
 
-            if (payload == "line_eof")
-                parse_graph.GraphAPI("line");
-
-            else if (payload == "lollipop_eof")
-                parse_graph.GraphAPI("lollipop");
-
-            else if (commandPayload.Contains("live"))
-                parse_graph.ParseAndGraphLiveData(payload);
-
-            else if (commandPayload.Contains("fetch_donki_gst"))
-                parse_graph.ParseAPI(payload);
-
-            else if (commandPayload.Contains("fetch"))
-                parse_graph.ParseAPI(payload);
-
-            else
-                Debug.WriteLine($"Unrecognized Command: {commandPayload}");
-
+                // Enqueue the message quickly
+                await messageChannel.Writer.WriteAsync(payload);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error enqueueing message: {ex.Message}");
+            }
         };
+
+        try
+        {
+            await _client.ConnectAsync(_options);
+            Debug.WriteLine("Connection attempt completed.");
+
+            // Start processing incoming messages
+            _ = ProcessMessagesAsync(commandPayload);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Failed to connect: {ex.Message}");
+        }
     }
+
+    private async Task ProcessMessagesAsync(string commandPayload)
+    {
+        try
+        {
+            await foreach (var payload in messageChannel.Reader.ReadAllAsync(processingCts.Token))
+            {
+                Debug.WriteLine(payload);
+
+                if (payload == "line_eof")
+                {
+                    parse_graph.GraphAPI("line");
+                    await StopAsync();
+                }
+                else if (payload == "lollipop_eof")
+                {
+                    parse_graph.GraphAPI("lollipop");
+                    await StopAsync();
+                }
+                else if (commandPayload.Contains("live"))
+                {
+                    parse_graph.ParseAndGraphLiveData(payload);
+                }
+                else if (commandPayload.Contains("fetch"))
+                {
+                    parse_graph.ParseAPI(payload);
+                }
+                else
+                {
+                    Debug.WriteLine($"Unrecognized payload: {payload}");
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            Debug.WriteLine("Message processing canceled.");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error processing messages: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false; // Reset processing state
+        }
+    }
+
+
+    public void ResetChannel()
+    {
+        processingCts.Cancel(); // Cancel ongoing operations
+        processingCts.Dispose();
+        processingCts = new CancellationTokenSource(); // Create a new cancellation token
+    }
+
+    private bool isProcessing = false;
+
+    public async Task StartAsync(string commandPayload)
+    {
+        if (isProcessing)
+        {
+            Debug.WriteLine("Processing is already running.");
+            return;
+        }
+
+        isProcessing = true;
+        try
+        {
+            ResetChannel();
+            processingCts = new CancellationTokenSource();
+            await _client.ConnectAsync(_options);
+            _ = ProcessMessagesAsync(commandPayload);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Failed to start async process: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+
+
+    public async Task StopAsync()
+    {
+        try
+        {
+            processingCts.Cancel(); // Cancel the current token
+            processingCts.Dispose(); // Dispose of the old token source
+            processingCts = new CancellationTokenSource(); // Create a new token source
+
+            if (_client != null && _client.IsConnected)
+            {
+                await _client.DisconnectAsync();
+                Debug.WriteLine("Client disconnected.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error during StopAsync: {ex.Message}");
+        }
+    }
+
+
+
+
 
     public async Task MqttSendFile(string ipAddress, string commandPayload, string filePath)
     {
@@ -140,23 +251,6 @@ public class MQTT_Functions
         MessageBox.Show("Notice: File has been Completely Uploaded", "End of File", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
-    public async Task StartAsync()
-    {
-        try
-        {
-            await _client.ConnectAsync(_options);
-            Debug.WriteLine("Connection attempt completed.");
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Failed to connect: {ex.Message}");
-        }
-    }
-
-    public async Task StopAsync()
-    {
-        await _client.DisconnectAsync();
-    }
 
 
     public async Task ToggleLiveSubscription(ToolStripButton toggleButton)

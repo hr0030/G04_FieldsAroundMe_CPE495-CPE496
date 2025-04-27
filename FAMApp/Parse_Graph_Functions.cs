@@ -154,31 +154,35 @@ public class Parse_Graph_Functions
             return;
         }
 
-        var parts = payload.Split(',');
+        var lines = payload.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
-        
-        if (parts.Length != 2)
+        foreach (var line in lines)
         {
-            Debug.WriteLine($"Invalid payload format: {payload}");
-            return;
-        }
+            var parts = line.Split(',');
+            // Debug.WriteLine(line);
+            if (parts.Length != 2)
+            {
+                Debug.WriteLine($"Invalid payload format: {line}");
+                continue; // Skip to next line
+            }
 
-        string timestampStr = parts[0].Trim(); // Get Timestamp
-        if (!DateTime.TryParse(timestampStr, out DateTime timestamp))
-        {
-            Debug.WriteLine($"Failed to parse timestamp: {timestampStr}");
-            return;
-        }
+            string timestampStr = parts[0].Trim();
+            if (!DateTime.TryParse(timestampStr, out DateTime timestamp))
+            {
+                Debug.WriteLine($"Failed to parse timestamp: {timestampStr}");
+                continue; // Skip to next line
+            }
 
-        string numericStr = parts[1].Trim(); // Get Data
-        if (!double.TryParse(numericStr, out double numericValue))
-        {
-            Debug.WriteLine($"Failed to parse numerical value: {numericStr}");
-            return;
-        }
+            string numericStr = parts[1].Trim();
+            if (!double.TryParse(numericStr, out double numericValue))
+            {
+                Debug.WriteLine($"Failed to parse numerical value: {numericStr}");
+                continue; // Skip to next line
+            }
 
-        API_Dates.Add(timestamp);
-        API_Magnitude.Add(numericValue);
+            API_Dates.Add(timestamp);
+            API_Magnitude.Add(numericValue);
+        }
     }
 
     public void GraphAPI(string graphType)

@@ -164,7 +164,7 @@ namespace FAMApp
 
         private void oura_Ring_HR_Reserve_Click(object sender, EventArgs e)
         {
-            getHealthAPIGeneral("Heart Rate Reservse", "fetch_oura_ring,2");
+            getHealthAPIGeneral("Heart Rate Reserve", "fetch_oura_ring,2");
         }
 
         private void oura_Ring_RR_Click(object sender, EventArgs e)
@@ -223,7 +223,6 @@ namespace FAMApp
                 {
                     popups.spawnAPIPopup(yAxisLabel);
                     mqtt.MqttReceiver(ipAddress, "api/data", commandPayload);
-                    _ = mqtt.StartAsync();
                 }
                 else
                 {
@@ -260,8 +259,6 @@ namespace FAMApp
                     {
                         popups.spawnAPIPopup(yAxisLabel);
                         mqtt.MqttReceiver(ipAddress, subscriberTopic, updatedCommandPayload);
-
-                        _ = mqtt.StartAsync();
                     }
                     else
                     {
@@ -292,7 +289,6 @@ namespace FAMApp
             if (!string.IsNullOrEmpty(ipAddress))
             {
                 mqtt.MqttReceiver(ipAddress, "sensor/data", $"live,{selectedSensor}");
-                _ = mqtt.StartAsync();
             }
             else
             {
@@ -482,6 +478,21 @@ namespace FAMApp
         private void samsungHRUpload_Click(object sender, EventArgs e)
         {
             genericUploadFunction("samsung_hr_upload");
+        }
+
+        private void samsungHRAPI_Click(object sender, EventArgs e)
+        {
+            getHealthAPIGeneral("Heart Rate", "fetch_samsung_hr,4");
+        }
+
+        private void samsungHRMinAPI_Click(object sender, EventArgs e)
+        {
+            getHealthAPIGeneral("Heart Rate Min", "fetch_samsung_hr,2");
+        }
+
+        private void samsungHRMaxAPI_Click(object sender, EventArgs e)
+        {
+            getHealthAPIGeneral("Heart Rate Min", "fetch_samsung_hr,3");
         }
 
 
