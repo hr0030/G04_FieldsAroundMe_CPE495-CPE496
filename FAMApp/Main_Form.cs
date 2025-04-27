@@ -280,6 +280,7 @@ namespace FAMApp
             SettingsLoader.LoadSettings(); // Load the settings
             string selectedSensor = sensorSelectionComboBox.SelectedItem?.ToString();
             string ipAddress = GlobalSettings.ServerIP; // Get the IP address from settings
+            parse_graph.ClearAllData();
             if (!string.IsNullOrEmpty(ipAddress))
             {
                 mqtt.MqttReceiver(ipAddress, "sensor/data", $"live,{selectedSensor}");
@@ -461,6 +462,15 @@ namespace FAMApp
         {
             parse_graph.ClearAllData();
         }
+
+
+        
+
+        private async void stopListeningLiveButton_Click(object sender, EventArgs e)
+        {
+            await mqtt.ToggleLiveSubscription(stopListeningLiveButton);
+        }
+
     }
 }
 

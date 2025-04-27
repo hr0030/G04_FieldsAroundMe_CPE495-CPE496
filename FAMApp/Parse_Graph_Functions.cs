@@ -15,6 +15,39 @@ public class Parse_Graph_Functions
     private FormsPlot Main_Plot;
     private FormsPlot API_Plot;
 
+    private System.Timers.Timer plotTimer;
+    private bool isTimerStarted = false;
+    private bool newDataAvailable = false;
+
+
+    private void StartPlotTimer()
+    {
+        plotTimer = new System.Timers.Timer(2000); // interval in milliseconds
+        plotTimer.Elapsed += PlotTimer_Tick;
+        plotTimer.AutoReset = true;
+        plotTimer.Enabled = true;
+        isTimerStarted = true;
+        Debug.WriteLine("Timer has been started");
+    }
+
+    private void PlotTimer_Tick(object sender, EventArgs e)
+    {
+        Debug.WriteLine("Timer has triggered");
+        if (newDataAvailable)
+        {
+            Main_Plot.Invoke((MethodInvoker)(() =>
+            {
+                Debug.WriteLine("PlotData Invoked");
+                PlotData(voltagesByChannel, _Dates);
+            }));
+
+            newDataAvailable = false;
+        }
+    }
+
+
+
+
     public Parse_Graph_Functions(FormsPlot mainPlot, FormsPlot apiPlot)
     {
         this.Main_Plot = mainPlot;
@@ -82,15 +115,14 @@ public class Parse_Graph_Functions
     public void ParseAndGraphLiveData(string payload)
     {
         var parts = payload.Split(',');
-        double voltage = 0; //Initialization to Avoid Errors
+        double voltage = 0;
         int channel = 0;
 
         if (parts.Length == 3 &&
             DateTime.TryParse(parts[0], out DateTime timestamp) &&
             int.TryParse(parts[1], out channel) &&
-            double.TryParse(parts[2], out voltage)) // Parse payload
+            double.TryParse(parts[2], out voltage))
         {
-
             if (!voltagesByChannel.ContainsKey(channel))
             {
                 voltagesByChannel[channel] = new List<double>();
@@ -103,14 +135,17 @@ public class Parse_Graph_Functions
             _Dates[channel].Add(timestamp);
             voltagesByChannel[channel].Add(voltage);
 
-            // Invoke PlotData on the main thread
-            Main_Plot.Invoke((MethodInvoker)(() =>
-            {
+            newDataAvailable = true;  // <=== TELL the timer we have new data
 
-                PlotData(voltagesByChannel, _Dates);
-            }));
+            // Start timer if not already started
+            if (!isTimerStarted)
+            {
+                StartPlotTimer();
+            }
         }
     }
+
+
 
     public void ParseAPI(string payload)
     {

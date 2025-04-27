@@ -9,6 +9,7 @@ public class MQTT_Functions
     public MqttClientOptions _options;
     private Parse_Graph_Functions parse_graph;
 
+    private bool isLiveSubscribed = false; // Track state
     public MQTT_Functions(Parse_Graph_Functions parseGraph)
     {
         this.parse_graph = parseGraph;
@@ -42,8 +43,13 @@ public class MQTT_Functions
 
             }
 
+            Thread.Sleep(500);
             await _client.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic(subscriberTopic).Build());
             Debug.WriteLine($"Subscribed to topic '{subscriberTopic}'.");
+
+            if (!isLiveSubscribed)
+                isLiveSubscribed = true;
+
         };
 
         _client.DisconnectedAsync += async e =>
@@ -150,6 +156,54 @@ public class MQTT_Functions
     public async Task StopAsync()
     {
         await _client.DisconnectAsync();
+    }
+
+
+    public async Task ToggleLiveSubscription(ToolStripButton toggleButton)
+    {
+        if (_client != null && _client.IsConnected)
+        {
+            try
+            {
+                if (isLiveSubscribed)
+                {
+                    await _client.UnsubscribeAsync("sensor/data");
+                    Debug.WriteLine("Unsubscribed from 'live' topic.");
+                    isLiveSubscribed = false;
+                }
+                else
+                {
+                    await _client.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic("sensor/data").Build());
+                    Debug.WriteLine("Subscribed to 'live' topic.");
+                    isLiveSubscribed = true;
+                }
+
+                // Update the button text after toggling
+                UpdateToggleButton(toggleButton);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to toggle 'live' subscription: {ex.Message}");
+            }
+        }
+        else
+        {
+            Debug.WriteLine("Client is not connected. Cannot toggle subscription.");
+        }
+    }
+
+    private void UpdateToggleButton(ToolStripButton toggleButton)
+    {
+        if (isLiveSubscribed)
+        {
+            toggleButton.Text = "Stop Live";
+            toggleButton.BackColor = Color.LightCoral;  // Optional: red-ish color
+        }
+        else
+        {
+            toggleButton.Text = "Start Live ";
+            toggleButton.BackColor = Color.LightGreen;  // Optional: green-ish color
+        }
     }
 
 }

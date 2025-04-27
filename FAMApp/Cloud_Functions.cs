@@ -89,7 +89,9 @@ public class Cloud_Functions
             request.Q = $"name = '{fileName}' and trashed = false";
             request.Fields = "files(id, name)";
 
+
             var response = request.Execute();
+
             if (response.Files.Count == 0)
             {
                 Debug.WriteLine($"File '{fileName}' not found on Google Drive.");

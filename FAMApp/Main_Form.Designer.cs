@@ -63,16 +63,17 @@ namespace FAMApp
             cSVToCloudToolStripMenuItem = new ToolStripMenuItem();
             ouraRingToolStripMenuItem1 = new ToolStripMenuItem();
             clearAPIButton = new ToolStripButton();
+            clearAllButton = new ToolStripButton();
             Center = new ToolStripButton();
             sensorSelectionComboBox = new ToolStripComboBox();
-            clearAllButton = new ToolStripButton();
+            stopListeningLiveButton = new ToolStripButton();
             toolStrip1.SuspendLayout();
             SuspendLayout();
             // 
             // toolStrip1
             // 
             toolStrip1.ImageScalingSize = new Size(20, 20);
-            toolStrip1.Items.AddRange(new ToolStripItem[] { sourceButton1, Settings_Button, toolStripDropDownUpload, clearAPIButton, clearAllButton, Center, sensorSelectionComboBox });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { sourceButton1, Settings_Button, toolStripDropDownUpload, clearAPIButton, clearAllButton, Center, sensorSelectionComboBox, stopListeningLiveButton });
             toolStrip1.Location = new Point(0, 0);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(800, 25);
@@ -274,6 +275,17 @@ namespace FAMApp
             clearAPIButton.Text = "Clear API";
             clearAPIButton.Click += clearAPIButton_Click;
             // 
+            // clearAllButton
+            // 
+            clearAllButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            clearAllButton.Image = (Image)resources.GetObject("clearAllButton.Image");
+            clearAllButton.ImageTransparentColor = Color.Magenta;
+            clearAllButton.Name = "clearAllButton";
+            clearAllButton.Size = new Size(55, 22);
+            clearAllButton.Text = "Clear All";
+            clearAllButton.ToolTipText = "Clear All Data on Current Graph";
+            clearAllButton.Click += clearAllButton_Click;
+            // 
             // Center
             // 
             Center.DisplayStyle = ToolStripItemDisplayStyle.Text;
@@ -292,16 +304,17 @@ namespace FAMApp
             sensorSelectionComboBox.Size = new Size(121, 25);
             sensorSelectionComboBox.ToolTipText = "Select your Desired Sensor";
             // 
-            // clearAllButton
+            // stopListeningLiveButton
             // 
-            clearAllButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            clearAllButton.Image = (Image)resources.GetObject("clearAllButton.Image");
-            clearAllButton.ImageTransparentColor = Color.Magenta;
-            clearAllButton.Name = "clearAllButton";
-            clearAllButton.Size = new Size(55, 22);
-            clearAllButton.Text = "Clear All";
-            clearAllButton.ToolTipText = "Clear All Data on Current Graph";
-            clearAllButton.Click += clearAllButton_Click;
+            stopListeningLiveButton.BackColor = Color.LightCoral;
+            stopListeningLiveButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            stopListeningLiveButton.Image = (Image)resources.GetObject("stopListeningLiveButton.Image");
+            stopListeningLiveButton.ImageTransparentColor = Color.Magenta;
+            stopListeningLiveButton.Name = "stopListeningLiveButton";
+            stopListeningLiveButton.Size = new Size(59, 22);
+            stopListeningLiveButton.Text = "Stop Live";
+            stopListeningLiveButton.ToolTipText = "Stop Adding Additional Data Points to Live Graph";
+            stopListeningLiveButton.Click += stopListeningLiveButton_Click;
             // 
             // Main_Form
             // 
@@ -370,5 +383,6 @@ namespace FAMApp
         private ToolStripMenuItem ouraRingToolStripMenuItem1;
         private ToolStripComboBox sensorSelectionComboBox;
         private ToolStripButton clearAllButton;
+        private ToolStripButton stopListeningLiveButton;
     }
 }
