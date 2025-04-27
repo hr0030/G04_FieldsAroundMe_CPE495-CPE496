@@ -66,7 +66,7 @@ namespace FAMApp
                     settings = new Settings();
                 }
                 settings.ServerIP = IP_Address_Textbox.Text;
-                if(Hundred_Hz_Button.Enabled == true)
+                if(Hundred_Hz_Button.Enabled == false)
                 { 
                     settings.SamplingFrequency = "100"; 
                 }

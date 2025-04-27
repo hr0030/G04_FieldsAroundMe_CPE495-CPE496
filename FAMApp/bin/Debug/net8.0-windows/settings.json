@@ -1,6 +1,6 @@
 {
   "ServerIP": "10.4.171.239",
-  "SamplingFrequency": "100",
+  "SamplingFrequency": "250",
   "Sensors": [
     {
       "Name": "Oak_Tree",

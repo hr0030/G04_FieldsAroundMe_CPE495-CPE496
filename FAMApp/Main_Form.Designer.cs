@@ -56,8 +56,6 @@ namespace FAMApp
             hRVToolStripMenuItem = new ToolStripMenuItem();
             samsungHealthToolStripMenuItem = new ToolStripMenuItem();
             heartRateToolStripMenuItem = new ToolStripMenuItem();
-            heartRateMinToolStripMenuItem = new ToolStripMenuItem();
-            heartRateMaxToolStripMenuItem = new ToolStripMenuItem();
             Settings_Button = new ToolStripButton();
             toolStripDropDownUpload = new ToolStripDropDownButton();
             settingsToolStripMenuItem = new ToolStripMenuItem();
@@ -208,7 +206,7 @@ namespace FAMApp
             // 
             // samsungHealthToolStripMenuItem
             // 
-            samsungHealthToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { heartRateToolStripMenuItem, heartRateMinToolStripMenuItem, heartRateMaxToolStripMenuItem });
+            samsungHealthToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { heartRateToolStripMenuItem });
             samsungHealthToolStripMenuItem.Name = "samsungHealthToolStripMenuItem";
             samsungHealthToolStripMenuItem.Size = new Size(231, 26);
             samsungHealthToolStripMenuItem.Text = "Samsung Health";
@@ -219,20 +217,6 @@ namespace FAMApp
             heartRateToolStripMenuItem.Size = new Size(224, 26);
             heartRateToolStripMenuItem.Text = "Heart Rate";
             heartRateToolStripMenuItem.Click += samsungHRAPI_Click;
-            // 
-            // heartRateMinToolStripMenuItem
-            // 
-            heartRateMinToolStripMenuItem.Name = "heartRateMinToolStripMenuItem";
-            heartRateMinToolStripMenuItem.Size = new Size(224, 26);
-            heartRateMinToolStripMenuItem.Text = "Heart Rate Min";
-            heartRateMinToolStripMenuItem.Click += samsungHRMinAPI_Click;
-            // 
-            // heartRateMaxToolStripMenuItem
-            // 
-            heartRateMaxToolStripMenuItem.Name = "heartRateMaxToolStripMenuItem";
-            heartRateMaxToolStripMenuItem.Size = new Size(224, 26);
-            heartRateMaxToolStripMenuItem.Text = "Heart Rate Max";
-            heartRateMaxToolStripMenuItem.Click += samsungHRMaxAPI_Click;
             // 
             // Settings_Button
             // 
@@ -419,7 +403,5 @@ namespace FAMApp
         private ToolStripMenuItem samsungHRUpload;
         private ToolStripMenuItem samsungHealthToolStripMenuItem;
         private ToolStripMenuItem heartRateToolStripMenuItem;
-        private ToolStripMenuItem heartRateMinToolStripMenuItem;
-        private ToolStripMenuItem heartRateMaxToolStripMenuItem;
     }
 }

@@ -303,7 +303,8 @@ namespace FAMApp
         {
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
             {
-                openFileDialog.Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*";
+                openFileDialog.Filter = "All files (*.*)|*.*";
+                // openFileDialog.Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*";
                 openFileDialog.Title = "Select a CSV file";
 
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
@@ -374,7 +375,7 @@ namespace FAMApp
 
         private void treeRhythmsUpload_Click(object sender, EventArgs e)
         {
-            genericUploadFunction("tree_rhythms_upload");
+            genericDatelessUploadFunction("tree_rhythms_upload");
         }
 
         private void UAH_SWIRLL_Upload_Click(object sender, EventArgs e)
@@ -440,6 +441,32 @@ namespace FAMApp
             }
         }
 
+        private void genericDatelessUploadFunction(string commandPayload)
+        {
+            SettingsLoader.LoadSettings(); // Load the settings
+
+            string ipAddress = GlobalSettings.ServerIP; // Get the IP address from settings
+
+            if (!string.IsNullOrEmpty(ipAddress))
+            {
+
+                using (OpenFileDialog openFileDialog = new OpenFileDialog())
+                {
+                    openFileDialog.Filter = "All files (*.*)|*.*";
+                    openFileDialog.Title = "Select a file";
+
+                    if (openFileDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        string filePath = openFileDialog.FileName;
+                        mqtt.MqttSendFile(ipAddress, commandPayload, filePath);
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("Error: Ip Address is Undefined", "IP Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
 
         // Centers Graph when button is pressed.
 
@@ -459,7 +486,7 @@ namespace FAMApp
 
         private void ouraRingUpload_Click(object sender, EventArgs e)
         {
-            genericUploadFunction("oura_ring_upload");
+            genericDatelessUploadFunction("oura_ring_upload");
         }
 
         private void clearAllButton_Click(object sender, EventArgs e)
@@ -477,23 +504,14 @@ namespace FAMApp
 
         private void samsungHRUpload_Click(object sender, EventArgs e)
         {
-            genericUploadFunction("samsung_hr_upload");
+            genericDatelessUploadFunction("samsung_hr_upload");
         }
 
         private void samsungHRAPI_Click(object sender, EventArgs e)
         {
-            getHealthAPIGeneral("Heart Rate", "fetch_samsung_hr,4");
+            getHealthAPIGeneral("Heart Rate", "fetch_samsung_hr,2");
         }
 
-        private void samsungHRMinAPI_Click(object sender, EventArgs e)
-        {
-            getHealthAPIGeneral("Heart Rate Min", "fetch_samsung_hr,2");
-        }
-
-        private void samsungHRMaxAPI_Click(object sender, EventArgs e)
-        {
-            getHealthAPIGeneral("Heart Rate Min", "fetch_samsung_hr,3");
-        }
 
 
     }
