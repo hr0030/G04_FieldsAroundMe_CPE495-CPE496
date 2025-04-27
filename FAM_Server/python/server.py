@@ -1,4 +1,4 @@
-soimport os
+import os
 import paho.mqtt.client as mqtt
 import threading
 import api_parsers
@@ -10,19 +10,43 @@ from datetime import datetime, timedelta
 import google_drive_and_networking_functions
 
 csv_file_name = {}
+csv_file_handles = {}
+current_date = datetime.now().strftime("%Y_%m_%d")
+
 # Initialize CSV file with the current date
 def create_new_csv(sensor_name):
-    global csv_file_name
+    global csv_file_name, current_date, csv_file_handles
     current_date = datetime.now().strftime("%Y_%m_%d")
     file_name = f"{sensor_name}_{current_date}.csv"
     
-    with open(file_name, mode='w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(["Timestamp", "Voltage_mV"])
-
+    file = open(file_name, mode='w', newline='')
+    writer = csv.writer(file)
+    writer.writerow(["Timestamp", "Voltage_mV"])
+    
     csv_file_name[sensor_name] = file_name
+    csv_file_handles[sensor_name] = (file,writer)
     print(f"New CSV file created: {file_name}")
 
+
+def close_all_csvs():
+    for sensor_name, (file, _) in csv_file_handles.items():
+        file.flush()
+        file.close()
+        print(f"Closed CSV for {sensor_name}")
+        
+    csv_file_handles.clear()
+    
+def write_live_data_to_csv(sensor_name, message):
+    if sensor_name in csv_file_handles:
+        file, writer = csv_file_handles[sensor_name]
+        
+        if not file.closed:
+            timestamp, channel, voltage = message.split(",",2)
+            writer.writerow([timestamp.strip(), channel.strip(), voltage.strip()])
+            file.flush()
+            
+        else:
+            print(f"Tried to write to closed file: {file}")
 
     # Periodically check for date change
 def monitor_date_change():
@@ -31,7 +55,9 @@ def monitor_date_change():
         new_date = datetime.now().strftime("%Y_%m_%d")
         if new_date != current_date:
             
-            for sensor_name, file_name in csv_file_names.items():
+            close_all_csvs()
+            
+            for sensor_name, file_name in csv_file_name.items():
                 print(f"Uploading {file_name}")
                 google_drive_and_networking_functions.google_drive_upload(file_name)
 
@@ -45,7 +71,9 @@ def monitor_date_change():
 
 # Print Local IP
 ip_address = google_drive_and_networking_functions.get_ip_address()
-create_new_csv()
+create_new_csv("S1") 
+create_new_csv("S2")  
+create_new_csv("S3")  
 date_monitor_thread = threading.Thread(target=monitor_date_change, daemon=True)
 date_monitor_thread.start()
 
@@ -89,7 +117,7 @@ def on_message(client, userdata, msg):
     message = msg.payload.decode()
     # print(f"Received on {msg.topic}: {message}")
     message_parsed = message.strip().split(',')
-
+    global current_sensor
     # Check what command
     if msg.topic == command_topic:
         match message_parsed[0].lower():
@@ -103,44 +131,58 @@ def on_message(client, userdata, msg):
                 print("Received 'fetch_donki_gst' command. Getting API")
                 api_parsers.fetch_and_save_donki_gst_data(message_parsed[1], message_parsed[2])
                 publish_csv_to_mqtt("APIs/donki_gst_api.csv", "api/data", 1)
+                client.publish("api/data", "lollipop_eof")
 
             case "fetch_temperature_api":
                 print("Received 'fetch_temperature_api' command. Getting API")
                 api_parsers.fetch_and_save_temperature_api(message_parsed[1], message_parsed[2])
                 publish_csv_to_mqtt("APIs/noaa_temp.csv", "api/data", 1)
+                client.publish("api/data", "line_eof")
 
             case "fetch_humidity_api":
                 print("Received 'fetch_humidity_api' command. Getting API")
                 publish_csv_date_range("APIs/SWIRLL", "UAH_Swirll.csv", message_parsed[1], message_parsed[2], "api/data", 2)
+                client.publish("api/data", "line_eof")
 
             case "fetch_uah_swirll":
                 print("Received 'fetch_uah_swirll' command. Writing to 'api/data'")
                 publish_csv_date_range("APIs/SWIRLL", "UAH_Swirll.csv", message_parsed[1], message_parsed[2], "api/data", 1)
+                client.publish("api/data", "line_eof")
 
             case "fetch_tree_rhythms":
                 print("Received 'fetch_tree_rhythms' command. Writing to 'api/data'")
                 publish_csv_to_mqtt(f"APIs/Tree_Rhythms/{message_parsed[1]}_tree_rhythms.csv", "api/data", 1)
+                client.publish("api/data", "line_eof")
 
             case "fetch_solar_index":
                 print("Received 'fetch_solar_index' command. Writing to 'api/data'")
                 publish_csv_date_range("APIs/SWIRLL", "UAH_Swirll.csv", message_parsed[1], message_parsed[2], "api/data", 3)
+                client.publish("api/data", "line_eof")
 
             case "fetch_pressure_api":
                 print("Received 'fetch_pressure_api' command. Writing to 'api/data'")
                 publish_csv_date_range("APIs/SWIRLL", "UAH_Swirll.csv", message_parsed[1], message_parsed[2], "api/data", 1)
+                client.publish("api/data", "line_eof")
 
             case "fetch_sunrise_time":
                 print("Received 'fetch_sunrise_time' command. Writing to 'api/data'")
                 api_parsers.fetch_and_save_sunrise_api()
+                client.publish("api/data", "line_eof")
 
             case "fetch_sunset_time":
                 print("Received 'fetch_sunset_time' command. Writing to 'api/data'")
                 api_parsers.fetch_and_save_sunset_api()
+                client.publish("api/data", "line_eof")
 
             case "fetch_oura":
                 print("Received 'fetch_oura' command. Writing to 'api/data'")
                 publish_csv_to_mqtt(f"APIs/oura_ring.csv", "api/data", message_parse[1])
+                client.publish("api/data", "line_eof")
             
+            case "fetch_samsung":
+                print("Received 'fetch_samsung' command. Writing to 'api/data'")
+                publish_csv_to_mqtt(f"APIs/Samsung_hr.csv", "api/data", message_parse[1])
+                client.publish("api/data", "line_eof")
 
             case "settings_upload":
                 print("Received 'settings_upload' command. Writing to file.")
@@ -159,37 +201,35 @@ def on_message(client, userdata, msg):
             case "oura_ring_upload":
                 print("Received 'oura_ring_upload' command. Writing to file.")
                 write_mqtt_to_file(f"APIs/Oura_Ring.csv", "oura_ring")
+                
+            case "samsung_hr_upload":
+                print("Received 'samsung_hr_upload' command. Writing to file.")
+                write_mqtt_to_file(f"APIs/Samsung_hr.csv", "samsung_hr")
 
             case _:
                 print(f"Unknown command received: {message}")
 
     elif msg.topic == esp32_sensor_1_topic:
         
-        # Write Data to CSV
-        with open(csv_file_name["S1"], mode='a', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(message)
-        if current_sensor == "S1"
+        write_live_data_to_csv("S1", message) # Write Data to CSV
+        
+        if current_sensor == "S1":
             # Republish the received data
             client.publish(republish_topic, message)
 
     elif msg.topic == esp32_sensor_2_topic:
         
-        # Write Data to CSV
-        with open(csv_file_name["S2"], mode='a', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(message)
-        if current_sensor == "S2"
+        write_live_data_to_csv("S2", message) # Write Data to CSV
+        
+        if current_sensor == "S2":
             # Republish the received data
             client.publish(republish_topic, message)
 
     elif msg.topic == esp32_sensor_3_topic:
         
-        # Write Data to CSV
-        with open(csv_file_name["S3"], mode='a', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(message)
-        if current_sensor == "S3"
+        write_live_data_to_csv("S3", message) # Write Data to CSV
+         
+        if current_sensor == "S3":
             # Republish the received data
             client.publish(republish_topic, message)
 
@@ -251,7 +291,7 @@ def publish_csv_to_mqtt(file_name, mqtt_topic, column_number):
                 if len(row) > column_number:
                     message = f"{row[0]}, {row[column_number]}"
                     client.publish(mqtt_topic, message)
-                    # print(f"Published to {mqtt_topic}: {message}")
+                    print(f"Published to {mqtt_topic}: {message}")
                 else:
                     print(f"Skipping row {row} due to insufficient columns.")
     except FileNotFoundError:
