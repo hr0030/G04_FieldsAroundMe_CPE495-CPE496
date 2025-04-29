@@ -12,13 +12,17 @@ def fetch_and_save_donki_gst_data(start_date, end_date):
         api_endpoint = "https://api.nasa.gov/DONKI/GST"
         api_key = "HSkpffGNq4SeOzWBlVvevS45zB5HUkX75g2uPmbO"  # API key from NASA
 
+        # Correctly Format Timestamp
+        start_date = start_date.replace('_', '-')
+        end_date = end_date.replace('_', '-')
+                
         # Build the request URL
         url = f"{api_endpoint}?startDate={start_date}&endDate={end_date}&api_key={api_key}"
 
         # Fetch the data
         response = requests.get(url)
         response.raise_for_status()
-
+        print(url)
         print(f"HTTP Status: {response.status_code}")
         data = response.json()
         donki_gst_csv_file_name = f"APIs/donki_gst_api.csv"
@@ -56,6 +60,55 @@ def fetch_and_save_donki_gst_data(start_date, end_date):
         print(f"Error processing NASA DONKI API data: {e}")
 
 
+'''
+def fetch_and_save_donki_slr_data(start_date, end_date):
+    try:
+        api_endpoint = "https://api.nasa.gov/DONKI/FLR"
+        api_key = "HSkpffGNq4SeOzWBlVvevS45zB5HUkX75g2uPmbO"  # API key from NASA
+        start_date = start_date.replace('_', '-')
+        end_date = end_date.replace('_', '-')
+
+        # Build the request URL
+        url = f"{api_endpoint}?startDate={start_date}&endDate={end_date}&api_key={api_key}"
+
+        # Fetch the data
+        response = requests.get(url)
+        response.raise_for_status()
+
+        print(f"HTTP Status: {response.status_code}")
+        data = response.json()
+        donki_gst_csv_file_name = f"FLR_donki_{start_date}_{end_date}.csv"
+
+        # Save data to CSV
+        with open(donki_gst_csv_file_name, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(["Timestamp", "Speed"])  # Header
+
+            for event in data:
+                start_time = event.get("peakTime", "N/A")
+
+                # Ensure timestamp is correctly formatted
+                try:
+                    timestamp = datetime.strptime(start_time, "%Y-%m-%dT%H:%MZ")
+                    formatted_timestamp = timestamp.strftime("%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    print(f"Invalid timestamp format: {start_time}")
+                    continue
+
+                # Extract and average KP Index values
+                # kp_values = [kp.get("speed") for kp in event.get("cmeAnalyses", []) if isinstance(kp.get("speed"), (int, float))]
+                kp_values = [event.get("classType")]
+                if not kp_values:
+                    print(f"No valid KP index data for event at {start_time}")
+                    continue
+
+                writer.writerow([formatted_timestamp, kp_values])
+
+except requests.RequestException as e:
+        print(f"Error fetching NASA DONKI API data: {e}")
+except Exception as e:
+        print(f"Error processing NASA DONKI API data: {e}")
+'''
 def fetch_and_save_temperature_api(start_date, end_date):
             try:
                 # Correctly Format Timestamp
@@ -151,5 +204,28 @@ def parse_UAH_SWIRLL(line):
 
                 return [date_time, pressure, humidity, solar_radiation]
 
+
+def parse_Samsung_hr(line):
+    parts = line.strip().split(',')
+    if len(parts) < 21:
+        return None  # skip incomplete/malformed lines
+
+    try:
+        # Get important fields
+        start_time_str = parts[4].strip()  # 5th column: start_time
+        heart_rate = parts[20].strip()     # 21st column: heart_rate
+
+        if not start_time_str or not heart_rate:
+            return None  # skip if missing important fields
+
+        # Parse the timestamp correctly
+        start_time = datetime.strptime(start_time_str.strip(), "%Y-%m-%d %H:%M:%S.%f")
+        formatted_time = start_time.strftime("%Y-%m-%d %H:%M:%S")  # clean format (no milliseconds)
+        # Prepare the return line
+        return f"{formatted_time},{heart_rate.strip()}"
+
+    except Exception as e:
+        print(f"Error parsing line: {e}")
+        return None
 
 
