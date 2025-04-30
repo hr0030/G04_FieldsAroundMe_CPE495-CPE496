@@ -20,7 +20,7 @@ public class Parse_Graph_Functions
     private bool newDataAvailable = false;
 
 
-    public void SortAndFilterVoltagesByTimestamp()
+    public void SortAndFilterVoltagesByTimestamp(bool applyVoltageFilter)
     {
         foreach (var channel in _Dates.Keys.ToList())
         {
@@ -32,26 +32,36 @@ public class Parse_Graph_Functions
                     .OrderBy(entry => entry.Date) // Sort by timestamp
                     .ToList();
 
-                // Filter the data based on 20% tolerance
                 List<DateTime> filteredDates = new List<DateTime>();
                 List<double> filteredVoltages = new List<double>();
 
-                for (int i = 0; i < combinedList.Count; i++)
+                if (applyVoltageFilter)
                 {
-                    var current = combinedList[i];
-                    if (i == 0 || Math.Abs(current.Voltage - filteredVoltages.Last()) <= Math.Abs(filteredVoltages.Last() * 0.2))
+                    // Filter the data based on 20% tolerance
+                    for (int i = 0; i < combinedList.Count; i++)
                     {
-                        filteredDates.Add(current.Date);
-                        filteredVoltages.Add(current.Voltage);
+                        var current = combinedList[i];
+                        if (i == 0 || Math.Abs(current.Voltage - filteredVoltages.Last()) <= Math.Abs(filteredVoltages.Last() * 0.2))
+                        {
+                            filteredDates.Add(current.Date);
+                            filteredVoltages.Add(current.Voltage);
+                        }
                     }
                 }
+                else
+                {
+                    // If filtering is disabled, retain all sorted data
+                    filteredDates = combinedList.Select(entry => entry.Date).ToList();
+                    filteredVoltages = combinedList.Select(entry => entry.Voltage).ToList();
+                }
 
-                // Update the dictionaries with sorted and filtered data
+                // Update the dictionaries with sorted and filtered (or unfiltered) data
                 _Dates[channel] = filteredDates;
                 voltagesByChannel[channel] = filteredVoltages;
             }
         }
     }
+
 
 
     private void StartPlotTimer()
@@ -72,7 +82,7 @@ public class Parse_Graph_Functions
             Main_Plot.Invoke((MethodInvoker)(() =>
             {
                 Debug.WriteLine("PlotData Invoked");
-                SortAndFilterVoltagesByTimestamp();
+                SortAndFilterVoltagesByTimestamp(false);
                 PlotData(voltagesByChannel, _Dates);
             }));
 
@@ -135,7 +145,7 @@ public class Parse_Graph_Functions
 
             Main_Plot.Invoke((MethodInvoker)(() =>
             {
-                SortAndFilterVoltagesByTimestamp();
+                SortAndFilterVoltagesByTimestamp(true);
                 PlotData(voltagesByChannel, _Dates);
             }));
         }
@@ -437,6 +447,7 @@ public class Parse_Graph_Functions
             MessageBox.Show($"Error removing API overlay: {ex.Message}");
         }
     }
+
 
     public void ClearAllData()
     {
