@@ -4,7 +4,7 @@ using System.Diagnostics;
 using ScottPlot.WinForms;
 using FAMApp;
 using static Moon_Phase_Calculator;
-public class Parse_Graph_Functions 
+public class Parse_Graph_Functions
 {
 
     public Dictionary<int, List<double>> voltagesByChannel = new Dictionary<int, List<double>>();
@@ -18,6 +18,40 @@ public class Parse_Graph_Functions
     private System.Timers.Timer plotTimer;
     private bool isTimerStarted = false;
     private bool newDataAvailable = false;
+
+
+    public void SortAndFilterVoltagesByTimestamp()
+    {
+        foreach (var channel in _Dates.Keys.ToList())
+        {
+            if (_Dates.ContainsKey(channel) && voltagesByChannel.ContainsKey(channel))
+            {
+                // Combine timestamps and voltages into a single list of tuples
+                var combinedList = _Dates[channel]
+                    .Zip(voltagesByChannel[channel], (date, voltage) => new { Date = date, Voltage = voltage })
+                    .OrderBy(entry => entry.Date) // Sort by timestamp
+                    .ToList();
+
+                // Filter the data based on 20% tolerance
+                List<DateTime> filteredDates = new List<DateTime>();
+                List<double> filteredVoltages = new List<double>();
+
+                for (int i = 0; i < combinedList.Count; i++)
+                {
+                    var current = combinedList[i];
+                    if (i == 0 || Math.Abs(current.Voltage - filteredVoltages.Last()) <= Math.Abs(filteredVoltages.Last() * 0.2))
+                    {
+                        filteredDates.Add(current.Date);
+                        filteredVoltages.Add(current.Voltage);
+                    }
+                }
+
+                // Update the dictionaries with sorted and filtered data
+                _Dates[channel] = filteredDates;
+                voltagesByChannel[channel] = filteredVoltages;
+            }
+        }
+    }
 
 
     private void StartPlotTimer()
@@ -38,6 +72,7 @@ public class Parse_Graph_Functions
             Main_Plot.Invoke((MethodInvoker)(() =>
             {
                 Debug.WriteLine("PlotData Invoked");
+                SortAndFilterVoltagesByTimestamp();
                 PlotData(voltagesByChannel, _Dates);
             }));
 
@@ -100,6 +135,7 @@ public class Parse_Graph_Functions
 
             Main_Plot.Invoke((MethodInvoker)(() =>
             {
+                SortAndFilterVoltagesByTimestamp();
                 PlotData(voltagesByChannel, _Dates);
             }));
         }
@@ -280,8 +316,8 @@ public class Parse_Graph_Functions
             linePlot.LineWidth = 2;
             linePlot.MarkerSize = 1;
             linePlot.Color = palette.GetColor(colorIndex++); // Get a unique color
-          
-            Main_Plot.Plot.Legend.IsVisible = true; 
+
+            Main_Plot.Plot.Legend.IsVisible = true;
             Main_Plot.Plot.Axes.AutoScale();
             Main_Plot.Refresh();
 
@@ -303,7 +339,7 @@ public class Parse_Graph_Functions
                 return;
             }
 
-            
+
             double[] xs = timestamps.ConvertAll(date => date.ToOADate()).ToArray(); // Convert DateTime to OADate
             double[] ys = data.ToArray();
 
@@ -406,8 +442,8 @@ public class Parse_Graph_Functions
     {
         try
         {
-            Main_Plot.Plot.Clear(); 
-            Main_Plot.Plot.Axes.AutoScale(); 
+            Main_Plot.Plot.Clear();
+            Main_Plot.Plot.Axes.AutoScale();
             Main_Plot.Refresh();
 
             voltagesByChannel.Clear(); // Clear voltage data
