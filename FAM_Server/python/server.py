@@ -7,6 +7,7 @@ import json
 import struct
 import time
 from datetime import datetime, timedelta
+from collections import deque
 import google_drive_and_networking_functions
 
 csv_file_name = {}
@@ -63,7 +64,6 @@ def monitor_date_change():
 
         time.sleep(60)  # Check every minute
 
-# Print Local IP
 ip_address = google_drive_and_networking_functions.get_ip_address()
 create_new_csv("S1")
 create_new_csv("S2")
@@ -85,6 +85,24 @@ republish_topic = "sensor/data"
 command_topic = "desktop/commands"
 data_upload_topic = "desktop/data"
 
+
+
+MAX_VALUES = 100
+TOLERANCE = 0.15
+
+last_voltage_values = {
+    "S1": deque(maxlen=MAX_VALUES),
+    "S2": deque(maxlen=MAX_VALUES),
+    "S3": deque(maxlen=MAX_VALUES)
+}
+
+def is_within_tolerance(new_value, last_values, tolerance=TOLERANCE):
+
+    if not last_values:  
+        return True
+    last_value = last_values[-1] 
+    return abs(new_value - last_value) <= abs(last_value * tolerance)
+    
 def read_settings_function():
     try:
         with open("Settings/settings.json") as file:
@@ -105,7 +123,6 @@ def read_settings_function():
     except Exception as e:
         print(f"Unexpected error: {e}")
 
-# ✅ FIXED: Decode msg.payload correctly
 def on_message(client, userdata, msg):
     message = msg.payload.decode('utf-8')
     print(f"Received on {msg.topic}: {message}")
@@ -155,15 +172,6 @@ def on_message(client, userdata, msg):
                 publish_csv_date_range("APIs/SWIRLL", "UAH_Swirll.csv", message_parsed[1], message_parsed[2], "api/data", 1)
                 client.publish("api/data", "line_eof", qos=1)
 
-            case "fetch_sunrise_time":
-                print("Received 'fetch_sunrise_time' command. Writing to 'api/data'")
-                api_parsers.fetch_and_save_sunrise_api()
-                client.publish("api/data", "line_eof", qos=1)
-
-            case "fetch_sunset_time":
-                print("Received 'fetch_sunset_time' command. Writing to 'api/data'")
-                api_parsers.fetch_and_save_sunset_api()
-                client.publish("api/data", "line_eof", qos=1)
 
             case "fetch_oura_ring":
                 print("Received 'fetch_oura' command. Writing to 'api/data'")
@@ -200,50 +208,52 @@ def on_message(client, userdata, msg):
             case _:
                 print(f"Unknown command received: {message}")
 
+
     elif msg.topic == esp32_sensor_1_topic:
         voltage_value = float(message_parsed[2])
         timestamp_str = message_parsed[0]
-        
-        timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S") # timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
+    
+        timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
         if timestamp.year >= 2024:
             if -1.8 <= voltage_value <= 1.8 and not (0.00 == voltage_value):
-                write_live_data_to_csv("S1", message)
-                if current_sensor == "S1":
-                    client.publish(republish_topic, message)
-        
-            # else:
-                # print(f"Voltage Outside of Expected Value: {message}")
-        
+                last_voltage_values["S1"].append(voltage_value)
+
+                # Publish only if within tolerance
+                if is_within_tolerance(voltage_value, last_voltage_values["S1"]):
+                    write_live_data_to_csv("S1", message)
+                    if current_sensor == "S1":
+                        client.publish(republish_topic, message)
 
     elif msg.topic == esp32_sensor_2_topic:
         voltage_value = float(message_parsed[2])
         timestamp_str = message_parsed[0]
-
-        timestamp = datetime.strptime(timestamp_str,
-                                      "%Y-%m-%d %H:%M:%S")  # timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
+    
+        timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
         if timestamp.year >= 2024:
             if -1.8 <= voltage_value <= 1.8 and not (0.00 == voltage_value):
-                write_live_data_to_csv("S2", message)
-                if current_sensor == "S2":
-                    client.publish(republish_topic, message)
+                last_voltage_values["S2"].append(voltage_value)
 
-            # else:
-            # print(f"Voltage Outside of Expected Value: {message}")
+                # Publish only if within tolerance
+                if is_within_tolerance(voltage_value, last_voltage_values["S2"]):
+                    write_live_data_to_csv("S2", message)
+                    if current_sensor == "S2":
+                        client.publish(republish_topic, message)
 
     elif msg.topic == esp32_sensor_3_topic:
         voltage_value = float(message_parsed[2])
         timestamp_str = message_parsed[0]
 
-        timestamp = datetime.strptime(timestamp_str,
-                                      "%Y-%m-%d %H:%M:%S")  # timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
+        timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
         if timestamp.year >= 2024:
             if -1.8 <= voltage_value <= 1.8 and not (0.00 == voltage_value):
-                write_live_data_to_csv("S3", message)
-                if current_sensor == "S3":
-                    client.publish(republish_topic, message)
+                last_voltage_values["S3"].append(voltage_value)
 
-            # else:
-            # print(f"Voltage Outside of Expected Value: {message}")
+                # Publish only if within tolerance
+                if is_within_tolerance(voltage_value, last_voltage_values["S3"]):
+                    write_live_data_to_csv("S3", message)
+                    if current_sensor == "S3":
+                        client.publish(republish_topic, message)
+
 
 def write_mqtt_to_file(filepath, parserToUse):
     def on_file_message(client, userdata, msg):
@@ -324,7 +334,6 @@ def publish_csv_to_mqtt(file_name, mqtt_topic, column_number):
     except Exception as e:
         print(f"Error publishing data to MQTT topic: {e}")
 
-# MQTT Client Setup
 client = mqtt.Client()
 client.on_message = on_message
 client.connect(broker)

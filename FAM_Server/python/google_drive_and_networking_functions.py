@@ -5,10 +5,9 @@ import socket
 from datetime import datetime
 import csv
 
-# Path to your service account JSON file
+
 SERVICE_ACCOUNT_FILE = 'Settings/fieldsaroundme-server-key.json'
 
-# Google Drive API scopes
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
 def get_ip_address():
@@ -23,23 +22,19 @@ def get_ip_address():
 
 def google_drive_upload(file_path, folder_id=None):
     try:
-        # Authenticate using service account
         creds = service_account.Credentials.from_service_account_file(
             SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-
-        # Build the Google Drive API service
         service = build('drive', 'v3', credentials=creds)
 
-        # File metadata
+ 
         file_metadata = {
-            'name': file_path.split('/')[-1],  # Extract file name from path
+            'name': file_path.split('/')[-1],  
             'mimeType': 'text/csv'
         }
 
         if folder_id:
             file_metadata['parents'] = [folder_id]
 
-        # Upload file
         media = MediaFileUpload(file_path, mimetype='text/csv')
         file = service.files().create(
             body=file_metadata,
@@ -49,13 +44,12 @@ def google_drive_upload(file_path, folder_id=None):
 
         print(f"File uploaded successfully. File ID: {file['id']}")
 
-        # Set permissions to make the file public
         permissions = {
             'type': 'anyone',
-            'role': 'reader',  # 'writer' if you want write access
+            'role': 'reader',  
         }
 
-        # Create permission
+
         service.permissions().create(
             fileId=file['id'],
             body=permissions,

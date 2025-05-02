@@ -11,15 +11,9 @@ def fetch_and_save_donki_gst_data(start_date, end_date):
     try:
         api_endpoint = "https://api.nasa.gov/DONKI/GST"
         api_key = "HSkpffGNq4SeOzWBlVvevS45zB5HUkX75g2uPmbO"  # API key from NASA
-
-        # Correctly Format Timestamp
         start_date = start_date.replace('_', '-')
         end_date = end_date.replace('_', '-')
-                
-        # Build the request URL
         url = f"{api_endpoint}?startDate={start_date}&endDate={end_date}&api_key={api_key}"
-
-        # Fetch the data
         response = requests.get(url)
         response.raise_for_status()
         print(url)
@@ -35,7 +29,6 @@ def fetch_and_save_donki_gst_data(start_date, end_date):
             for event in data:
                 start_time = event.get("startTime", "N/A")
 
-                # Ensure timestamp is correctly formatted
                 try:
                     timestamp = datetime.strptime(start_time, "%Y-%m-%dT%H:%MZ")
                     formatted_timestamp = timestamp.strftime("%Y-%m-%d %H:%M:%S")
@@ -43,7 +36,6 @@ def fetch_and_save_donki_gst_data(start_date, end_date):
                     print(f"Invalid timestamp format: {start_time}")
                     continue
 
-                # Extract and average KP Index values
                 kp_values = [kp.get("kpIndex") for kp in event.get("allKpIndex", []) if isinstance(kp.get("kpIndex"), (int, float))]
                 if not kp_values:
                     print(f"No valid KP index data for event at {start_time}")
@@ -111,7 +103,6 @@ except Exception as e:
 '''
 def fetch_and_save_temperature_api(start_date, end_date):
             try:
-                # Correctly Format Timestamp
                 start_date = start_date.replace('_', '-')
                 end_date = end_date.replace('_', '-')
 
@@ -204,28 +195,31 @@ def parse_UAH_SWIRLL(line):
 
                 return [date_time, pressure, humidity, solar_radiation]
 
-
+'''
 def parse_Samsung_hr(line):
     parts = line.strip().split(',')
     if len(parts) < 21:
-        return None  # skip incomplete/malformed lines
+        return None  # Skip incomplete/malformed lines
 
     try:
-        # Get important fields
+        # Extract important fields
         start_time_str = parts[4].strip()  # 5th column: start_time
-        heart_rate = parts[20].strip()     # 21st column: heart_rate
+        heart_rate = parts[20].strip()    # 21st column: heart_rate
 
-        if not start_time_str or not heart_rate:
-            return None  # skip if missing important fields
+        # Ensure both fields are non-empty and heart_rate is numeric
+        if not start_time_str or not heart_rate or not heart_rate.replace('.', '', 1).isdigit():
+            return None  # Skip if missing important fields
 
         # Parse the timestamp correctly
-        start_time = datetime.strptime(start_time_str.strip(), "%Y-%m-%d %H:%M:%S.%f")
-        formatted_time = start_time.strftime("%Y-%m-%d %H:%M:%S")  # clean format (no milliseconds)
+        start_time = datetime.strptime(start_time_str, "%Y-%m-%d %H:%M:%S.%f")
+        formatted_time = start_time.strftime("%Y-%m-%d %H:%M:%S")  # Format without milliseconds
+
         # Prepare the return line
-        return f"{formatted_time},{heart_rate.strip()}"
+        return f"{formatted_time},{heart_rate}"
 
     except Exception as e:
-        print(f"Error parsing line: {e}")
+        print(f"Error parsing line: {line}\nException: {e}")
         return None
 
+'''
 
