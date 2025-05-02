@@ -64,14 +64,16 @@ namespace FAMApp
             clearAllButton = new ToolStripButton();
             Center = new ToolStripButton();
             sensorSelectionComboBox = new ToolStripComboBox();
+            channelComboBox = new ToolStripComboBox();
             stopListeningLiveButton = new ToolStripButton();
+            correlateButton = new ToolStripButton();
             toolStrip1.SuspendLayout();
             SuspendLayout();
             // 
             // toolStrip1
             // 
             toolStrip1.ImageScalingSize = new Size(20, 20);
-            toolStrip1.Items.AddRange(new ToolStripItem[] { sourceButton1, Settings_Button, toolStripDropDownUpload, clearAPIButton, clearAllButton, Center, sensorSelectionComboBox, stopListeningLiveButton });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { sourceButton1, Settings_Button, toolStripDropDownUpload, clearAPIButton, clearAllButton, Center, sensorSelectionComboBox, channelComboBox, stopListeningLiveButton, correlateButton });
             toolStrip1.Location = new Point(0, 0);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(914, 28);
@@ -216,35 +218,35 @@ namespace FAMApp
             // settingsToolStripMenuItem
             // 
             settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            settingsToolStripMenuItem.Size = new Size(224, 26);
+            settingsToolStripMenuItem.Size = new Size(180, 26);
             settingsToolStripMenuItem.Text = "Settings";
             settingsToolStripMenuItem.Click += settingsToolStripMenuItem_Click;
             // 
             // treeRhythmsToolStripMenuItem1
             // 
             treeRhythmsToolStripMenuItem1.Name = "treeRhythmsToolStripMenuItem1";
-            treeRhythmsToolStripMenuItem1.Size = new Size(224, 26);
+            treeRhythmsToolStripMenuItem1.Size = new Size(180, 26);
             treeRhythmsToolStripMenuItem1.Text = "Tree Rhythms";
             treeRhythmsToolStripMenuItem1.Click += treeRhythmsUpload_Click;
             // 
             // uAHSWIRLLToolStripMenuItem
             // 
             uAHSWIRLLToolStripMenuItem.Name = "uAHSWIRLLToolStripMenuItem";
-            uAHSWIRLLToolStripMenuItem.Size = new Size(224, 26);
+            uAHSWIRLLToolStripMenuItem.Size = new Size(180, 26);
             uAHSWIRLLToolStripMenuItem.Text = "UAH SWIRLL";
             uAHSWIRLLToolStripMenuItem.Click += UAH_SWIRLL_Upload_Click;
             // 
             // cSVToCloudToolStripMenuItem
             // 
             cSVToCloudToolStripMenuItem.Name = "cSVToCloudToolStripMenuItem";
-            cSVToCloudToolStripMenuItem.Size = new Size(224, 26);
+            cSVToCloudToolStripMenuItem.Size = new Size(180, 26);
             cSVToCloudToolStripMenuItem.Text = "CSV to Cloud";
             cSVToCloudToolStripMenuItem.Click += Upload_CSV_Cloud_Click;
             // 
             // ouraRingToolStripMenuItem1
             // 
             ouraRingToolStripMenuItem1.Name = "ouraRingToolStripMenuItem1";
-            ouraRingToolStripMenuItem1.Size = new Size(224, 26);
+            ouraRingToolStripMenuItem1.Size = new Size(180, 26);
             ouraRingToolStripMenuItem1.Text = "Oura Ring";
             ouraRingToolStripMenuItem1.Click += ouraRingUpload_Click;
             // 
@@ -288,6 +290,15 @@ namespace FAMApp
             sensorSelectionComboBox.Size = new Size(138, 28);
             sensorSelectionComboBox.ToolTipText = "Select your Desired Sensor";
             // 
+            // channelComboBox
+            // 
+            channelComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            channelComboBox.Items.AddRange(new object[] { "All", "1", "2", "3", "4" });
+            channelComboBox.Name = "channelComboBox";
+            channelComboBox.Size = new Size(138, 28);
+            channelComboBox.ToolTipText = "Select your Desired Sensor";
+            channelComboBox.SelectedIndexChanged += channelSelectionChanged;
+            // 
             // stopListeningLiveButton
             // 
             stopListeningLiveButton.BackColor = Color.LightCoral;
@@ -299,6 +310,16 @@ namespace FAMApp
             stopListeningLiveButton.Text = "Stop Live";
             stopListeningLiveButton.ToolTipText = "Stop Adding Additional Data Points to Live Graph";
             stopListeningLiveButton.Click += stopListeningLiveButton_Click;
+            // 
+            // correlateButton
+            // 
+            correlateButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            correlateButton.Image = (Image)resources.GetObject("correlateButton.Image");
+            correlateButton.ImageTransparentColor = Color.Magenta;
+            correlateButton.Name = "correlateButton";
+            correlateButton.Size = new Size(74, 25);
+            correlateButton.Text = "Correlate";
+            correlateButton.Click += correlateButton_Click;
             // 
             // Main_Form
             // 
@@ -367,5 +388,7 @@ namespace FAMApp
         private ToolStripComboBox sensorSelectionComboBox;
         private ToolStripButton clearAllButton;
         private ToolStripButton stopListeningLiveButton;
+        private ToolStripComboBox channelComboBox;
+        private ToolStripButton correlateButton;
     }
 }

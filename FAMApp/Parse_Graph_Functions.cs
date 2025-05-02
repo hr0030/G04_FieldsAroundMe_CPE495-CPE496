@@ -26,7 +26,6 @@ public class Parse_Graph_Functions
         {
             if (_Dates.ContainsKey(channel) && voltagesByChannel.ContainsKey(channel))
             {
-                // Combine timestamps and voltages into a single list of tuples
                 var combinedList = _Dates[channel]
                     .Zip(voltagesByChannel[channel], (date, voltage) => new { Date = date, Voltage = voltage })
                     .OrderBy(entry => entry.Date) // Sort by timestamp
@@ -50,12 +49,11 @@ public class Parse_Graph_Functions
                 }
                 else
                 {
-                    // If filtering is disabled, retain all sorted data
                     filteredDates = combinedList.Select(entry => entry.Date).ToList();
                     filteredVoltages = combinedList.Select(entry => entry.Voltage).ToList();
                 }
 
-                // Update the dictionaries with sorted and filtered (or unfiltered) data
+                
                 _Dates[channel] = filteredDates;
                 voltagesByChannel[channel] = filteredVoltages;
             }
@@ -82,7 +80,7 @@ public class Parse_Graph_Functions
             Main_Plot.Invoke((MethodInvoker)(() =>
             {
                 Debug.WriteLine("PlotData Invoked");
-                SortAndFilterVoltagesByTimestamp(false);
+                SortAndFilterVoltagesByTimestamp(true);
                 PlotData(voltagesByChannel, _Dates);
             }));
 
@@ -180,9 +178,8 @@ public class Parse_Graph_Functions
             _Dates[channel].Add(timestamp);
             voltagesByChannel[channel].Add(voltage);
 
-            newDataAvailable = true;  // <=== TELL the timer we have new data
+            newDataAvailable = true; 
 
-            // Start timer if not already started
             if (!isTimerStarted)
             {
                 StartPlotTimer();
@@ -275,24 +272,60 @@ public class Parse_Graph_Functions
         {
             Main_Plot.Plot.Clear(); // Clear plot
 
+            
+
             IPalette palette = new ScottPlot.Palettes.Category10();
+            string selectedChannel = Globals.SelectedChannel;
 
-            int colorIndex = 0;
-            foreach (var channel in voltagesByChannel.Keys)
+            if (string.IsNullOrEmpty(selectedChannel))
             {
-                if (voltagesByChannel[channel].Count == 0 || !timestamps.ContainsKey(channel) || timestamps[channel].Count == 0)
-                    continue; // Skip empty channels
+                MessageBox.Show("Please select a channel from the dropdown.");
+                return;
+            }
 
-                double[] xs = timestamps[channel].Select(date => date.ToOADate()).ToArray(); // Get timestamps for the current channel
-                double[] ys = voltagesByChannel[channel].ToArray(); // Get voltages for the current channel
+            if (selectedChannel == "All")
+            {
+                foreach (var channel in voltagesByChannel.Keys.OrderBy(c => c)) // Sort channels in ascending order
+                {
+                    if (voltagesByChannel[channel].Count == 0 || !timestamps.ContainsKey(channel) || timestamps[channel].Count == 0)
+                        continue; // Skip empty channels
+
+                    double[] xs = timestamps[channel].Select(date => date.ToOADate()).ToArray(); // Get timestamps for the current channel
+                    double[] ys = voltagesByChannel[channel].ToArray(); // Get voltages for the current channel
+
+                    var linePlot = Main_Plot.Plot.Add.Scatter(xs, ys);
+
+                    linePlot.Label = $"Channel {channel}";
+                    linePlot.LineWidth = 2;
+                    linePlot.MarkerSize = 1;
+                    linePlot.Color = palette.GetColor(channel); // Use colorIndex for unique colors
+                }
+            }
+
+            else if (int.TryParse(selectedChannel, out int channelToDisplay))
+            {
+                if (!voltagesByChannel.ContainsKey(channelToDisplay) || voltagesByChannel[channelToDisplay].Count == 0 ||
+                    !timestamps.ContainsKey(channelToDisplay) || timestamps[channelToDisplay].Count == 0)
+                {
+                    MessageBox.Show($"No data available for Channel {channelToDisplay}.");
+                    return;
+                }
+
+                double[] xs = timestamps[channelToDisplay].Select(date => date.ToOADate()).ToArray(); // Get timestamps for the current channel
+                double[] ys = voltagesByChannel[channelToDisplay].ToArray(); // Get voltages for the current channel
 
                 var linePlot = Main_Plot.Plot.Add.Scatter(xs, ys);
 
-                linePlot.Label = $"Channel {channel}";
+                linePlot.Label = $"Channel {channelToDisplay}";
                 linePlot.LineWidth = 2;
                 linePlot.MarkerSize = 1;
-                linePlot.Color = palette.GetColor(colorIndex++); // Get a unique color
-                Debug.WriteLine(voltagesByChannel[channel]);
+                int selectedChannelInt = int.Parse(selectedChannel);
+                linePlot.Color = palette.GetColor(selectedChannelInt); // Get a unique color
+            }
+            else
+            {
+                MessageBox.Show("Invalid channel selected.");
+                return;
             }
 
             Main_Plot.Plot.Legend.IsVisible = true;
@@ -304,6 +337,7 @@ public class Parse_Graph_Functions
             MessageBox.Show($"Error plotting data: {ex.Message}");
         }
     }
+
 
 
     public void PlotAPIDataOverlay()
@@ -478,15 +512,103 @@ public class Parse_Graph_Functions
             MoonPhaseData data = Moon_Phase_Calculator.Calculate(date);
 
             API_Dates.Add(date);
-            API_Magnitude.Add(data.Illumination); // or data.Phase or data.Age, depending on graph
-
-            // Optional: Log more details
+            API_Magnitude.Add(data.Illumination); 
             Console.WriteLine($"{date.ToShortDateString()} - {data.PhaseName} ({data.ZodiacName}) - Age: {data.Age:F2} days - Illumination: {data.Illumination:P0}");
         }
 
         PlotLollipopData(API_Dates, API_Magnitude);
     }
 
+
+    public void CalculateDotProductCorrelation()
+    {
+        try
+        {
+            string selectedChannel = Globals.SelectedChannel;
+
+            if (string.IsNullOrEmpty(selectedChannel))
+            {
+                MessageBox.Show("Please select a channel from the dropdown.");
+                return;
+            }
+
+            if (selectedChannel == "All")
+            {
+                MessageBox.Show("Dot product correlation cannot be calculated for 'All' channels. Please select a single channel.");
+                return;
+            }
+
+            if (!int.TryParse(selectedChannel, out int channelToCorrelate))
+            {
+                MessageBox.Show("Invalid channel selected.");
+                return;
+            }
+
+
+            if (!voltagesByChannel.ContainsKey(channelToCorrelate) || voltagesByChannel[channelToCorrelate].Count == 0 ||
+                !_Dates.ContainsKey(channelToCorrelate) || _Dates[channelToCorrelate].Count == 0)
+            {
+                MessageBox.Show($"No data available for Channel {channelToCorrelate}.");
+                return;
+            }
+
+            if (API_Magnitude == null || API_Magnitude.Count == 0 || API_Dates == null || API_Dates.Count == 0)
+            {
+                MessageBox.Show("API data is not available for correlation.");
+                return;
+            }
+
+            var channelDataDict = _Dates[channelToCorrelate]
+                .Zip(voltagesByChannel[channelToCorrelate], (time, value) => new { time, value })
+                .GroupBy(x => x.time)
+                .ToDictionary(g => g.Key, g => g.Average(x => x.value));
+
+            var apiDataDict = API_Dates
+                .Zip(API_Magnitude, (time, value) => new { time, value })
+                .GroupBy(x => x.time)
+                .ToDictionary(g => g.Key, g => g.Average(x => x.value));
+
+
+            var matchingKeys = channelDataDict.Keys.Intersect(apiDataDict.Keys).ToList();
+
+            if (matchingKeys.Count == 0)
+            {
+                MessageBox.Show("No matching timestamps between the selected channel and API data.");
+                return;
+            }
+
+            var alignedChannelData = matchingKeys.Select(key => channelDataDict[key]).ToArray();
+            var alignedAPIData = matchingKeys.Select(key => apiDataDict[key]).ToArray();
+
+            double dotProduct = 0;
+            double magnitudeChannel = 0;
+            double magnitudeAPI = 0;
+
+            for (int i = 0; i < alignedChannelData.Length; i++)
+            {
+                dotProduct += alignedChannelData[i] * alignedAPIData[i];
+                magnitudeChannel += alignedChannelData[i] * alignedChannelData[i];
+                magnitudeAPI += alignedAPIData[i] * alignedAPIData[i];
+            }
+
+            magnitudeChannel = Math.Sqrt(magnitudeChannel);
+            magnitudeAPI = Math.Sqrt(magnitudeAPI);
+
+            if (magnitudeChannel == 0 || magnitudeAPI == 0)
+            {
+                MessageBox.Show("One of the datasets has zero magnitude, making correlation undefined.");
+                return;
+            }
+
+            double correlation = dotProduct / (magnitudeChannel * magnitudeAPI);
+
+            MessageBox.Show($"Dot product correlation for Channel {channelToCorrelate} with API data: {correlation:F4}");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error calculating dot product correlation: {ex.Message}");
+        }
+    }
 
 
 

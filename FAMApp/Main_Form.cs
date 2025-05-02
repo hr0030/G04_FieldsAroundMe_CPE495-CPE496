@@ -33,6 +33,7 @@ namespace FAMApp
         public FormsPlot Main_Plot;
         public FormsPlot API_Plot;
 
+        public string SelectedChannel => channelComboBox.SelectedItem?.ToString();
 
         Popup_Functions popups;
         Parse_Graph_Functions parse_graph;
@@ -44,6 +45,8 @@ namespace FAMApp
             InitializeChart();
             InitializeNewAPIPlot();
             sensorSelectionComboBox.SelectedIndex = 0;
+            channelComboBox.SelectedIndex = 0;
+            channelComboBox.SelectedIndexChanged += channelSelectionChanged;
             parse_graph = new Parse_Graph_Functions(Main_Plot, API_Plot);
             popups = new Popup_Functions(Main_Plot, API_Plot, parse_graph);
             mqtt = new MQTT_Functions(parse_graph);
@@ -62,7 +65,6 @@ namespace FAMApp
             };
             this.Controls.Add(Main_Plot);
 
-            // Customize the X and Y axes
             Main_Plot.Plot.Axes.DateTimeTicksBottom();
             Main_Plot.Plot.Axes.Bottom.Label.Text = "Date and Time";
             Main_Plot.Plot.Axes.Left.Label.Text = "Voltage (mV)";
@@ -76,7 +78,6 @@ namespace FAMApp
             };
             this.Controls.Add(API_Plot);
 
-            // Customize the X and Y axes
             API_Plot.Plot.Axes.DateTimeTicksBottom();
             API_Plot.Plot.Axes.Bottom.Label.Text = "Date and Time";
             API_Plot.Plot.Axes.Left.Label.Text = "Voltage (mV)";
@@ -103,11 +104,9 @@ namespace FAMApp
             string startDate = dateRange[0];
             string endDate = dateRange[1];
 
-            // Optional: Convert to DateTime objects if you want to validate or loop
             DateTime start = DateTime.ParseExact(startDate, "yyyy_MM_dd", null);
             DateTime end = DateTime.ParseExact(endDate, "yyyy_MM_dd", null);
 
-            // Loop through each date in the range
             for (DateTime date = start; date <= end; date = date.AddDays(1))
             {
                 string dateString = date.ToString("yyyy_MM_dd");
@@ -441,16 +440,11 @@ namespace FAMApp
         }
 
 
-        // Centers Graph when button is pressed.
-
         private void centerButton_Click(object sender, EventArgs e)
         {
             Main_Plot.Plot.Axes.AutoScale();
             Main_Plot.Refresh();
         }
-
-
-        // Removes API overlay Axis
 
         private void clearAPIButton_Click(object sender, EventArgs e)
         {
@@ -466,26 +460,20 @@ namespace FAMApp
         {
             parse_graph.ClearAllData();
         }
-
-
-
-
         private async void stopListeningLiveButton_Click(object sender, EventArgs e)
         {
             await mqtt.ToggleLiveSubscription(stopListeningLiveButton);
         }
 
-        private void samsungHRUpload_Click(object sender, EventArgs e)
+        private void channelSelectionChanged(object sender, EventArgs e)
         {
-            genericUploadFunction("samsung_hr_upload");
+            Globals.SelectedChannel = channelComboBox.SelectedItem?.ToString();
         }
 
-        private void samsungHRAPI_Click(object sender, EventArgs e)
+        private void correlateButton_Click(object sender, EventArgs e)
         {
-            getHealthAPIGeneral("Heart Rate", "fetch_samsung_hr,2");
+            parse_graph.CalculateDotProductCorrelation();
         }
-
-
     }
 }
 

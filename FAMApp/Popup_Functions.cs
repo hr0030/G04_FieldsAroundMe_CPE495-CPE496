@@ -158,7 +158,7 @@ public class Popup_Functions
 
     public static bool spawnLoginPopup()
     {
-        // Create form
+
         Form loginForm = new Form()
         {
             Width = 325,
@@ -170,26 +170,21 @@ public class Popup_Functions
             MaximizeBox = false
         };
 
-        // Username label and textbox
         Label userLabel = new Label() { Left = 20, Top = 20, Text = "Username" };
         TextBox userBox = new TextBox() { Left = 125, Top = 20, Width = 150 };
 
-        // Password label and textbox
         Label passLabel = new Label() { Left = 20, Top = 60, Text = "Password" };
         TextBox passBox = new TextBox() { Left = 125, Top = 60, Width = 150, UseSystemPasswordChar = true };
 
-        // OK button
         Button okButton = new Button() { Text = "Login", Left = 100, Width = 80, Top = 100, DialogResult = DialogResult.OK };
         loginForm.AcceptButton = okButton;
 
-        // Add controls
         loginForm.Controls.Add(userLabel);
         loginForm.Controls.Add(userBox);
         loginForm.Controls.Add(passLabel);
         loginForm.Controls.Add(passBox);
         loginForm.Controls.Add(okButton);
 
-        // Show dialog
         if (loginForm.ShowDialog() == DialogResult.OK)
         {
             string username = userBox.Text;

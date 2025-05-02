@@ -5,6 +5,7 @@ using Google.Apis.Upload;
 using Google.Apis.Drive.v3.Data;
 using System.Diagnostics;
 
+// Remember to put .json key in compile directory
 public class Cloud_Functions
 {
 

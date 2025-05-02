@@ -291,12 +291,12 @@ public class MQTT_Functions
         if (isLiveSubscribed)
         {
             toggleButton.Text = "Stop Live";
-            toggleButton.BackColor = Color.LightCoral;  // Optional: red-ish color
+            toggleButton.BackColor = Color.LightCoral;  
         }
         else
         {
             toggleButton.Text = "Start Live ";
-            toggleButton.BackColor = Color.LightGreen;  // Optional: green-ish color
+            toggleButton.BackColor = Color.LightGreen; 
         }
     }
 
