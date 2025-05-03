@@ -67,16 +67,17 @@ namespace FAMApp
             channelComboBox = new ToolStripComboBox();
             stopListeningLiveButton = new ToolStripButton();
             correlateButton = new ToolStripButton();
+            correlateAPIsButton = new ToolStripButton();
             toolStrip1.SuspendLayout();
             SuspendLayout();
             // 
             // toolStrip1
             // 
             toolStrip1.ImageScalingSize = new Size(20, 20);
-            toolStrip1.Items.AddRange(new ToolStripItem[] { sourceButton1, Settings_Button, toolStripDropDownUpload, clearAPIButton, clearAllButton, Center, sensorSelectionComboBox, channelComboBox, stopListeningLiveButton, correlateButton });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { sourceButton1, Settings_Button, toolStripDropDownUpload, clearAPIButton, clearAllButton, Center, sensorSelectionComboBox, channelComboBox, stopListeningLiveButton, correlateButton, correlateAPIsButton });
             toolStrip1.Location = new Point(0, 0);
             toolStrip1.Name = "toolStrip1";
-            toolStrip1.Size = new Size(914, 28);
+            toolStrip1.Size = new Size(1073, 28);
             toolStrip1.TabIndex = 0;
             toolStrip1.Text = "toolStrip1";
             // 
@@ -321,11 +322,21 @@ namespace FAMApp
             correlateButton.Text = "Correlate";
             correlateButton.Click += correlateButton_Click;
             // 
+            // correlateAPIsButton
+            // 
+            correlateAPIsButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            correlateAPIsButton.Image = (Image)resources.GetObject("correlateAPIsButton.Image");
+            correlateAPIsButton.ImageTransparentColor = Color.Magenta;
+            correlateAPIsButton.Name = "correlateAPIsButton";
+            correlateAPIsButton.Size = new Size(106, 25);
+            correlateAPIsButton.Text = "Correlate APIs";
+            correlateAPIsButton.Click += correlateAPIsButton_Click;
+            // 
             // Main_Form
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(914, 600);
+            ClientSize = new Size(1073, 600);
             Controls.Add(toolStrip1);
             Margin = new Padding(3, 4, 3, 4);
             Name = "Main_Form";
@@ -390,5 +401,6 @@ namespace FAMApp
         private ToolStripButton stopListeningLiveButton;
         private ToolStripComboBox channelComboBox;
         private ToolStripButton correlateButton;
+        private ToolStripButton correlateAPIsButton;
     }
 }

@@ -67,7 +67,7 @@ namespace FAMApp
 
             Main_Plot.Plot.Axes.DateTimeTicksBottom();
             Main_Plot.Plot.Axes.Bottom.Label.Text = "Date and Time";
-            Main_Plot.Plot.Axes.Left.Label.Text = "Voltage (mV)";
+            Main_Plot.Plot.Axes.Left.Label.Text = "Voltage (V)";
         }
 
         private void InitializeNewAPIPlot()
@@ -184,6 +184,7 @@ namespace FAMApp
             string selectedDate = popups.ShowDoubleDatePickerDialog();
             Debug.WriteLine(selectedDate);
             var parts = selectedDate.Split(',');
+
 
             if (parts.Length == 2 &&
     DateTime.TryParseExact(parts[0], "yyyy_MM_dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime startDate) &&
@@ -472,7 +473,13 @@ namespace FAMApp
 
         private void correlateButton_Click(object sender, EventArgs e)
         {
-            parse_graph.CalculateDotProductCorrelation();
+            parse_graph.CalculateDotProduct();
+            parse_graph.PlotCorrelationData();
+        }
+        private void correlateAPIsButton_Click(object sender, EventArgs e)
+        {
+            parse_graph.CalculateDotProductAPI();
+            parse_graph.PlotCorrelationData();
         }
     }
 }

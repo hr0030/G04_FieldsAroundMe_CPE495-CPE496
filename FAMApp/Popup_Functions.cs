@@ -101,7 +101,7 @@ public class Popup_Functions
         if (API_Plot.Parent != null)
         {
             originalParent = API_Plot.Parent;
-            originalParent.Controls.Remove(API_Plot); 
+            originalParent.Controls.Remove(API_Plot);
         }
 
         Form popOutForm = new Form
@@ -110,11 +110,20 @@ public class Popup_Functions
             Size = new Size(500, 400)
         };
 
-        Panel panel = new Panel
+        // Create the TableLayoutPanel
+        TableLayoutPanel buttonLayoutPanel = new TableLayoutPanel
         {
-            Dock = DockStyle.Fill
+            Dock = DockStyle.Bottom,
+            ColumnCount = 2,
+            RowCount = 1,
+            AutoSize = true
         };
 
+        // Add columns with equal width
+        buttonLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        buttonLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+
+        // Create Buttons
         Button overlayAPIButton = new Button
         {
             Text = "Overlay API on Main Graph",
@@ -124,37 +133,59 @@ public class Popup_Functions
             Margin = new Padding(10)
         };
 
+        Button overlayCorrelateAPIButton = new Button
+        {
+            Text = "Overlay API Correlation on Main Graph",
+            AutoSize = true,
+            Anchor = AnchorStyles.Bottom,
+            Padding = new Padding(10),
+            Margin = new Padding(10)
+        };
+
+        // Attach event handlers
         overlayAPIButton.Click += (s, e) =>
         {
             parse_graph.PlotAPIDataOverlay();
         };
 
-        overlayAPIButton.Dock = DockStyle.Bottom;
-        API_Plot.Plot.Clear();
-        API_Plot.Refresh();
-        API_Plot.Dock = DockStyle.Fill;
-        panel.Controls.Add(API_Plot);
-        panel.Controls.Add(overlayAPIButton);
-        popOutForm.Controls.Add(panel);
+        overlayCorrelateAPIButton.Click += (s, e) =>
+        {
+            parse_graph.PlotAPICorrelationOverlay(); // Assuming different functionality
+        };
+
+        // Add buttons to the layout
+        buttonLayoutPanel.Controls.Add(overlayAPIButton, 0, 0); // Add to first column
+        buttonLayoutPanel.Controls.Add(overlayCorrelateAPIButton, 1, 0); // Add to second column
+
+        // Add the layout panel to the pop-out form
+        popOutForm.Controls.Add(buttonLayoutPanel);
+
+        // Configure API Plot
         API_Plot.Plot.Axes.DateTimeTicksBottom();
         API_Plot.Plot.Axes.Bottom.Label.Text = "Date and Time";
         API_Plot.Plot.Axes.Left.Label.Text = yAxisLabel;
         API_Plot.Refresh();
 
+        // Add API Plot to the form
+        API_Plot.Dock = DockStyle.Fill;
+        popOutForm.Controls.Add(API_Plot);
+
+        // Handle form closing
         popOutForm.FormClosing += (s, e) =>
         {
             if (originalParent != null)
             {
                 originalParent.Controls.Add(API_Plot);
-                API_Plot.Plot.Clear(); 
-                API_Plot.Refresh();    
+                API_Plot.Plot.Clear();
+                API_Plot.Refresh();
                 API_Plot.Dock = DockStyle.Fill;
             }
         };
 
-
+        // Show the form
         popOutForm.Show();
     }
+
 
     public static bool spawnLoginPopup()
     {

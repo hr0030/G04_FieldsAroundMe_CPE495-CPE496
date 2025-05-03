@@ -4,13 +4,24 @@ using System.Diagnostics;
 using ScottPlot.WinForms;
 using FAMApp;
 using static Moon_Phase_Calculator;
+using ScottPlot.Plottables;
 public class Parse_Graph_Functions
 {
 
     public Dictionary<int, List<double>> voltagesByChannel = new Dictionary<int, List<double>>();
     public Dictionary<int, List<DateTime>> _Dates = new Dictionary<int, List<DateTime>>();
+
     public List<DateTime> API_Dates = new List<DateTime>();
     public List<double> API_Magnitude = new List<double>();
+
+    public List<DateTime> API_Correlation_1_Dates = new List<DateTime>();
+    public List<double> API_Correlation_1_Magnitude = new List<double>();
+
+    public List<DateTime> API_Correlation_2_Dates = new List<DateTime>();
+    public List<double> API_Correlation_2_Magnitude = new List<double>();
+
+    public List<DateTime> Correlation_Dates = new List<DateTime>();
+    public List<double> Correlation_Magnitude = new List<double>();
 
     private FormsPlot Main_Plot;
     private FormsPlot API_Plot;
@@ -338,20 +349,60 @@ public class Parse_Graph_Functions
         }
     }
 
-
-
-    public void PlotAPIDataOverlay()
+    public void PlotCorrelationData()
     {
         try
         {
 
             IPalette palette = new ScottPlot.Palettes.Category10();
 
-            int colorIndex = 4;
+            if (Correlation_Dates == null || Correlation_Dates.Count == 0 ||
+                Correlation_Magnitude == null || Correlation_Magnitude.Count == 0)
+            {
+                MessageBox.Show("No correlation data available to plot.");
+                return;
+            }
+
+            // Convert DateTime to OADate for plotting
+            double[] xs = Correlation_Dates.Select(date => date.ToOADate()).ToArray();
+            double[] ys = Correlation_Magnitude.ToArray();
+
+            // Add scatter plot
+            var scatterPlot = Main_Plot.Plot.Add.Scatter(xs, ys);
+            scatterPlot.Label = "Correlation Data";
+            scatterPlot.LineWidth = 2;
+            scatterPlot.MarkerSize = 3;
+            scatterPlot.Color = palette.GetColor(1); // Use colorIndex for unique colors
+
+            // Set plot properties
+            Main_Plot.Plot.Legend.IsVisible = true;
+            Main_Plot.Plot.Axes.DateTimeTicksBottom();
+            Main_Plot.Plot.Axes.Left.Label.Text = "Dot Product Magnitude";
+            Main_Plot.Plot.Axes.Bottom.Label.Text = "Timestamp";
+
+            // Auto-scale and refresh
+            Main_Plot.Plot.Axes.AutoScale();
+            Main_Plot.Refresh();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error plotting correlation data: {ex.Message}");
+        }
+    }
 
 
-            double[] xs = API_Dates.ConvertAll(date => date.ToOADate()).ToArray();
-            double[] ys = API_Magnitude.ToArray();
+    public void PlotAPIDataOverlay()
+    {
+        try
+        {
+            IPalette palette = new ScottPlot.Palettes.Category10();
+
+            // Copy the data from API_Dates and API_Magnitude
+            API_Correlation_1_Dates = new List<DateTime>(API_Dates);
+            API_Correlation_1_Magnitude = new List<double>(API_Magnitude);
+
+            double[] xs = API_Correlation_1_Dates.ConvertAll(date => date.ToOADate()).ToArray();
+            double[] ys = API_Correlation_1_Magnitude.ToArray();
 
             var linePlot = Main_Plot.Plot.Add.Scatter(xs, ys);
 
@@ -359,19 +410,117 @@ public class Parse_Graph_Functions
             linePlot.Label = "API";
             linePlot.LineWidth = 2;
             linePlot.MarkerSize = 1;
-            linePlot.Color = palette.GetColor(colorIndex++); // Get a unique color
+            linePlot.Color = palette.GetColor(6); // Get a unique color
 
             Main_Plot.Plot.Legend.IsVisible = true;
             Main_Plot.Plot.Axes.AutoScale();
             Main_Plot.Refresh();
-
-
         }
         catch (Exception ex)
         {
             MessageBox.Show($"Error plotting data: {ex.Message}");
         }
     }
+
+    public void PlotAPICorrelationOverlay()
+    {
+        try
+        {
+            IPalette palette = new ScottPlot.Palettes.Category10();
+
+            // Copy the data from API_Dates and API_Magnitude
+            API_Correlation_2_Dates = new List<DateTime>(API_Dates);
+            API_Correlation_2_Magnitude = new List<double>(API_Magnitude);
+
+            double[] xs = API_Correlation_2_Dates.ConvertAll(date => date.ToOADate()).ToArray();
+            double[] ys = API_Correlation_2_Magnitude.ToArray();
+
+            var linePlot = Main_Plot.Plot.Add.Scatter(xs, ys);
+
+            linePlot.Axes.YAxis = Main_Plot.Plot.Axes.Left;
+            linePlot.Label = "Correlation API";
+            linePlot.LineWidth = 2;
+            linePlot.MarkerSize = 1;
+            linePlot.Color = palette.GetColor(7); // Get a unique color
+
+            Main_Plot.Plot.Legend.IsVisible = true;
+            Main_Plot.Plot.Axes.AutoScale();
+            Main_Plot.Refresh();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error plotting data: {ex.Message}");
+        }
+    }
+
+
+
+    public void CalculateDotProductAPI()
+    {
+        Correlation_Dates.Clear();
+        Correlation_Magnitude.Clear();
+
+        // Calculate mean and standard deviation for magnitudes
+        double meanApiMagnitude = API_Correlation_1_Magnitude.Average();
+        double stdDevApiMagnitude = Math.Sqrt(API_Correlation_1_Magnitude.Average(m => Math.Pow(m - meanApiMagnitude, 2)));
+
+        double meanCorrelationMagnitude = API_Correlation_2_Magnitude.Average();
+        double stdDevCorrelationMagnitude = Math.Sqrt(API_Correlation_2_Magnitude.Average(m => Math.Pow(m - meanCorrelationMagnitude, 2)));
+
+        // Normalize the magnitudes using z-score normalization
+        var normalizedApiMagnitudes = API_Correlation_1_Magnitude
+            .Select(m => (m - meanApiMagnitude) / stdDevApiMagnitude)
+            .ToList();
+
+        var normalizedCorrelationMagnitudes = API_Correlation_2_Magnitude
+            .Select(m => (m - meanCorrelationMagnitude) / stdDevCorrelationMagnitude)
+            .ToList();
+
+        // Debugging output for non-normalized and normalized values
+        Debug.WriteLine("Non-Normalized and Normalized API Correlation 1 Magnitudes:");
+        for (int i = 0; i < API_Correlation_1_Magnitude.Count; i++)
+        {
+            Debug.WriteLine($"Original: {API_Correlation_1_Magnitude[i]:F4}, Normalized: {normalizedApiMagnitudes[i]:F4}");
+        }
+
+        Debug.WriteLine("Non-Normalized and Normalized API Correlation 2 Magnitudes:");
+        for (int i = 0; i < API_Correlation_2_Magnitude.Count; i++)
+        {
+            Debug.WriteLine($"Original: {API_Correlation_2_Magnitude[i]:F4}, Normalized: {normalizedCorrelationMagnitudes[i]:F4}");
+        }
+
+        // Create a dictionary for quick look-up of API_Correlation_Dates and corresponding normalized magnitudes
+        var correlationData = API_Correlation_2_Dates
+            .Select((date, index) => new { date, magnitude = normalizedCorrelationMagnitudes[index] })
+            .ToDictionary(x => x.date, x => x.magnitude);
+
+        foreach (var (date, index) in API_Dates.Select((d, i) => (d, i)))
+        {
+            if (correlationData.TryGetValue(date, out double correlationMagnitude))
+            {
+                if (index < normalizedApiMagnitudes.Count)
+                {
+                    double dotProduct = normalizedApiMagnitudes[index] * correlationMagnitude;
+                    Correlation_Dates.Add(date);
+                    Correlation_Magnitude.Add(dotProduct);
+
+                    // Debugging output
+                    Debug.WriteLine($"Match Found: Date = {date}, Normalized API Magnitude = {normalizedApiMagnitudes[index]:F4}, Normalized Correlation Magnitude = {correlationMagnitude:F4}, Dot Product = {dotProduct:F4}");
+                }
+                else
+                {
+                    Debug.WriteLine($"Index out of range: index = {index}, normalizedApiMagnitudes.Count = {normalizedApiMagnitudes.Count}");
+                }
+            }
+            else
+            {
+                // Debugging output for unmatched dates
+                Debug.WriteLine($"No Match Found for Date = {date}");
+            }
+        }
+
+    }
+
 
     public void PlotLineAPIData(List<DateTime> timestamps, List<double> data)
     {
@@ -409,6 +558,10 @@ public class Parse_Graph_Functions
             MessageBox.Show($"Error plotting line data: {ex.Message}");
         }
     }
+
+
+
+
     public void PlotLollipopData(List<DateTime> timestamps, List<double> data)
     {
         try
@@ -464,10 +617,14 @@ public class Parse_Graph_Functions
             var apiPlot = Main_Plot.Plot.GetPlottables()
                             .OfType<ScottPlot.Plottables.Scatter>()
                             .FirstOrDefault(p => p.Label == "API");
+            var apiCorrelationPlot = Main_Plot.Plot.GetPlottables()
+                            .OfType<ScottPlot.Plottables.Scatter>()
+                            .FirstOrDefault(p => p.Label == "Correlation API");
 
             if (apiPlot != null)
             {
                 Main_Plot.Plot.Remove(apiPlot);
+                Main_Plot.Plot.Remove(apiCorrelationPlot);
                 Main_Plot.Plot.Axes.AutoScale();
                 Main_Plot.Refresh();
             }
@@ -519,97 +676,75 @@ public class Parse_Graph_Functions
         PlotLollipopData(API_Dates, API_Magnitude);
     }
 
-
-    public void CalculateDotProductCorrelation()
+    public void CalculateDotProduct()
     {
-        try
+        Correlation_Dates.Clear();
+        Correlation_Magnitude.Clear();
+
+        // Calculate mean and standard deviation for magnitudes
+        double meanApiMagnitude = API_Correlation_1_Magnitude.Average();
+        double stdDevApiMagnitude = Math.Sqrt(API_Correlation_1_Magnitude.Average(m => Math.Pow(m - meanApiMagnitude, 2)));
+
+        double meanCorrelationMagnitude = voltagesByChannel[1].Average();
+        double stdDevCorrelationMagnitude = Math.Sqrt(voltagesByChannel[1].Average(m => Math.Pow(m - meanCorrelationMagnitude, 2)));
+
+        // Normalize the magnitudes using z-score normalization
+        var normalizedApiMagnitudes = API_Correlation_1_Magnitude
+            .Select(m => (m - meanApiMagnitude) / stdDevApiMagnitude)
+            .ToList();
+
+        var normalizedCorrelationMagnitudes = voltagesByChannel[1]
+            .Select(m => (m - meanCorrelationMagnitude) / stdDevCorrelationMagnitude)
+            .ToList();
+
+        // Debugging output for non-normalized and normalized values
+        Debug.WriteLine("Non-Normalized and Normalized API Correlation 1 Magnitudes:");
+        for (int i = 0; i < API_Correlation_1_Magnitude.Count; i++)
         {
-            string selectedChannel = Globals.SelectedChannel;
-
-            if (string.IsNullOrEmpty(selectedChannel))
-            {
-                MessageBox.Show("Please select a channel from the dropdown.");
-                return;
-            }
-
-            if (selectedChannel == "All")
-            {
-                MessageBox.Show("Dot product correlation cannot be calculated for 'All' channels. Please select a single channel.");
-                return;
-            }
-
-            if (!int.TryParse(selectedChannel, out int channelToCorrelate))
-            {
-                MessageBox.Show("Invalid channel selected.");
-                return;
-            }
-
-
-            if (!voltagesByChannel.ContainsKey(channelToCorrelate) || voltagesByChannel[channelToCorrelate].Count == 0 ||
-                !_Dates.ContainsKey(channelToCorrelate) || _Dates[channelToCorrelate].Count == 0)
-            {
-                MessageBox.Show($"No data available for Channel {channelToCorrelate}.");
-                return;
-            }
-
-            if (API_Magnitude == null || API_Magnitude.Count == 0 || API_Dates == null || API_Dates.Count == 0)
-            {
-                MessageBox.Show("API data is not available for correlation.");
-                return;
-            }
-
-            var channelDataDict = _Dates[channelToCorrelate]
-                .Zip(voltagesByChannel[channelToCorrelate], (time, value) => new { time, value })
-                .GroupBy(x => x.time)
-                .ToDictionary(g => g.Key, g => g.Average(x => x.value));
-
-            var apiDataDict = API_Dates
-                .Zip(API_Magnitude, (time, value) => new { time, value })
-                .GroupBy(x => x.time)
-                .ToDictionary(g => g.Key, g => g.Average(x => x.value));
-
-
-            var matchingKeys = channelDataDict.Keys.Intersect(apiDataDict.Keys).ToList();
-
-            if (matchingKeys.Count == 0)
-            {
-                MessageBox.Show("No matching timestamps between the selected channel and API data.");
-                return;
-            }
-
-            var alignedChannelData = matchingKeys.Select(key => channelDataDict[key]).ToArray();
-            var alignedAPIData = matchingKeys.Select(key => apiDataDict[key]).ToArray();
-
-            double dotProduct = 0;
-            double magnitudeChannel = 0;
-            double magnitudeAPI = 0;
-
-            for (int i = 0; i < alignedChannelData.Length; i++)
-            {
-                dotProduct += alignedChannelData[i] * alignedAPIData[i];
-                magnitudeChannel += alignedChannelData[i] * alignedChannelData[i];
-                magnitudeAPI += alignedAPIData[i] * alignedAPIData[i];
-            }
-
-            magnitudeChannel = Math.Sqrt(magnitudeChannel);
-            magnitudeAPI = Math.Sqrt(magnitudeAPI);
-
-            if (magnitudeChannel == 0 || magnitudeAPI == 0)
-            {
-                MessageBox.Show("One of the datasets has zero magnitude, making correlation undefined.");
-                return;
-            }
-
-            double correlation = dotProduct / (magnitudeChannel * magnitudeAPI);
-
-            MessageBox.Show($"Dot product correlation for Channel {channelToCorrelate} with API data: {correlation:F4}");
+            // Debug.WriteLine($"Original: {API_Correlation_1_Magnitude[i]:F4}, Normalized: {normalizedApiMagnitudes[i]:F4}");
         }
-        catch (Exception ex)
+
+        Debug.WriteLine("Non-Normalized and Normalized API Correlation 2 Magnitudes:");
+        for (int i = 0; i < voltagesByChannel[1].Count; i++)
         {
-            MessageBox.Show($"Error calculating dot product correlation: {ex.Message}");
+            // Debug.WriteLine($"Normalized: {normalizedCorrelationMagnitudes[i]:F4}");
         }
+
+        // Create a dictionary for quick look-up of API_Correlation_Dates and corresponding normalized magnitudes
+        var correlationData = _Dates[1]
+            .Select((date, index) => new { date, magnitude = normalizedCorrelationMagnitudes[index] })
+            .GroupBy(x => x.date) // Group by date to handle duplicates
+            .ToDictionary(
+                g => g.Key, // Use the date as the key
+                g => g.Average(x => x.magnitude) // Average magnitudes for duplicate dates
+             );
+
+
+        foreach (var (date, index) in API_Dates.Select((d, i) => (d, i)))
+        {
+            if (correlationData.TryGetValue(date, out double correlationMagnitude))
+            {
+                if (index < normalizedApiMagnitudes.Count)
+                {
+                    double dotProduct = normalizedApiMagnitudes[index] * correlationMagnitude;
+                    Correlation_Dates.Add(date);
+                    Correlation_Magnitude.Add(dotProduct);
+
+                    // Debugging output
+                    // Debug.WriteLine($"Match Found: Date = {date}, Normalized API Magnitude = {normalizedApiMagnitudes[index]:F4}, Normalized Correlation Magnitude = {correlationMagnitude:F4}, Dot Product = {dotProduct:F4}");
+                }
+                else
+                {
+                    // Debug.WriteLine($"Index out of range: index = {index}, normalizedApiMagnitudes.Count = {normalizedApiMagnitudes.Count}");
+                }
+            }
+            else
+            {
+                // Debugging output for unmatched dates
+                Debug.WriteLine($"No Match Found for Date = {date}");
+            }
+        }
+
     }
-
-
 
 }
